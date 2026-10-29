@@ -22,13 +22,15 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "samples" / "synthetic_clip.mp4"
 W, H, FPS, CARD_S = 720, 1280, 30, 4
 
-# (BGR colour, text lines). Order matters: the tests expect cuts at 4/8/12/16 s.
+# (BGR background, BGR text, lines). Order matters: the tests expect cuts at 4/8/12/16 s.
+# Cards alternate dark/light AND change hue, so every cut is obvious to any detector
+# (solid cards of similar brightness fooled both ffmpeg and PySceneDetect).
 CARDS = [
-    ((138, 58, 30), ["2-Minute", "Dahi Curry"]),
-    ((12, 88, 234), ["Step 1:", "whisk the curd"]),
-    ((60, 140, 22), ["Step 2:", "temper spices"]),
-    ((8, 179, 234), ["Step 3:", "simmer 2 min"]),
-    ((38, 38, 220), ["The finished", "curry!"]),
+    ((138, 58, 30), (255, 255, 255), ["2-Minute", "Dahi Curry"]),
+    ((21, 204, 250), (0, 0, 0), ["Step 1:", "whisk the curd"]),
+    ((52, 101, 22), (255, 255, 255), ["Step 2:", "temper spices"]),
+    ((116, 186, 253), (0, 0, 0), ["Step 3:", "simmer 2 min"]),
+    ((27, 27, 153), (255, 255, 255), ["The finished", "curry!"]),
 ]
 VOICE = (
     "Today we are making a two minute dahi curry. "
@@ -39,12 +41,12 @@ VOICE = (
 )
 
 
-def card_frame(color, lines) -> np.ndarray:
-    frame = np.full((H, W, 3), color, dtype=np.uint8)
+def card_frame(bg, fg, lines) -> np.ndarray:
+    frame = np.full((H, W, 3), bg, dtype=np.uint8)
     for i, line in enumerate(lines):
         (tw, th), _ = cv2.getTextSize(line, cv2.FONT_HERSHEY_DUPLEX, 2.0, 4)
         y = H // 2 - 40 + i * (th + 40)
-        cv2.putText(frame, line, ((W - tw) // 2, y), cv2.FONT_HERSHEY_DUPLEX, 2.0, (255, 255, 255), 4, cv2.LINE_AA)
+        cv2.putText(frame, line, ((W - tw) // 2, y), cv2.FONT_HERSHEY_DUPLEX, 2.0, fg, 4, cv2.LINE_AA)
     return frame
 
 
@@ -53,8 +55,8 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         silent = Path(tmp) / "silent.mp4"
         writer = cv2.VideoWriter(str(silent), cv2.VideoWriter_fourcc(*"mp4v"), FPS, (W, H))
-        for color, lines in CARDS:
-            frame = card_frame(color, lines)
+        for bg, fg, lines in CARDS:
+            frame = card_frame(bg, fg, lines)
             for _ in range(FPS * CARD_S):
                 writer.write(frame)
         writer.release()

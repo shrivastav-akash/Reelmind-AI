@@ -1,0 +1,161 @@
+{
+  "id": "mockdone0001",
+  "status": "done",
+  "created_at": "2026-10-30T15:02:11+05:30",
+  "topic": "cooking",
+  "replay": false,
+  "replay_recorded_at": null,
+  "stages": {
+    "video": { "status": "done", "reason": null },
+    "scout": { "status": "done", "reason": null },
+    "recommend": { "status": "done", "reason": null }
+  },
+  "events": [
+    { "t": 0.1, "source": "system", "kind": "info", "message": "MOCK DATA for building the UI. Not a real run.", "data": null },
+    { "t": 0.4, "source": "scout", "kind": "progress", "message": "Opening the #cooking topic page", "data": { "url": "https://www.instagram.com/explore/tags/cooking/" } },
+    { "t": 3.2, "source": "scout", "kind": "creator", "message": "Picked 3 creators: @mock_kitchen_a, @mock_kitchen_b, @mock_kitchen_c", "data": null },
+    { "t": 4.0, "source": "scout", "kind": "progress", "message": "Opening @mock_kitchen_a's Reels tab (Agent)", "data": { "handle": "mock_kitchen_a" } },
+    { "t": 4.1, "source": "scout", "kind": "progress", "message": "Opening @mock_kitchen_b's Reels tab (Agent)", "data": { "handle": "mock_kitchen_b" } },
+    { "t": 5.1, "source": "scout", "kind": "streaming_url", "message": "Live browser view ready for @mock_kitchen_a", "data": { "handle": "mock_kitchen_a", "url": "https://example.com/mock-live-view" } },
+    { "t": 6.0, "source": "video", "kind": "progress", "message": "Found 7 cuts, 1 in the first 3 s", "data": null },
+    { "t": 9.5, "source": "video", "kind": "progress", "message": "Transcript ready: first words at 0.4 s", "data": null },
+    { "t": 14.0, "source": "video", "kind": "progress", "message": "Payoff estimated at ~6.2 s", "data": null },
+    { "t": 31.0, "source": "scout", "kind": "outlier", "message": "3.1x @mock_kitchen_a's median (412K vs 133K)", "data": { "example_id": "ex1" } },
+    { "t": 38.0, "source": "scout", "kind": "error", "message": "@mock_kitchen_b: Login wall: public view not available", "data": { "handle": "mock_kitchen_b" } },
+    { "t": 39.0, "source": "scout", "kind": "progress", "message": "Opening @mock_kitchen_c's Reels tab (Fetch fallback)", "data": { "handle": "mock_kitchen_c" } },
+    { "t": 52.0, "source": "scout", "kind": "outlier", "message": "2.4x @mock_kitchen_c's median (96K vs 40K)", "data": { "example_id": "ex2" } },
+    { "t": 52.1, "source": "scout", "kind": "outlier", "message": "2.1x @mock_kitchen_a's median (279K vs 133K)", "data": { "example_id": "ex3" } },
+    { "t": 58.0, "source": "llm", "kind": "progress", "message": "Writing a grounded suggestion", "data": null },
+    { "t": 66.0, "source": "llm", "kind": "info", "message": "1 suggestion passed every grounding check", "data": null }
+  ],
+  "video": {
+    "duration_s": 30.1,
+    "cut_times_s": [1.8, 6.2, 9.9, 14.0, 18.5, 22.7, 26.4],
+    "cuts_first_3s": 1,
+    "avg_shot_length_s": 3.76,
+    "transcript": "Today I'm making a two minute dahi curry. First whisk the curd, then temper the spices, simmer for two minutes, and here it is.",
+    "first_word_at_s": 0.4,
+    "words_first_3s": "Today I'm making a two minute dahi curry",
+    "text_overlay_first_3s": "2-Minute Dahi Curry",
+    "opening_description": "A title card reading '2-Minute Dahi Curry' over a kitchen counter.",
+    "payoff_at_s": 6.2,
+    "payoff_reason": "The frame at 6.2 s is the first to show the finished curry in a bowl.",
+    "null_reasons": {}
+  },
+  "creators": [
+    {
+      "handle": "mock_kitchen_a",
+      "reels_url": "https://www.instagram.com/mock_kitchen_a/reels/",
+      "status": "done",
+      "access_status": "accessible",
+      "status_reason": null,
+      "method": "agent",
+      "streaming_url": "https://example.com/mock-live-view",
+      "reels_read": 12,
+      "median_views": 133000
+    },
+    {
+      "handle": "mock_kitchen_b",
+      "reels_url": "https://www.instagram.com/mock_kitchen_b/reels/",
+      "status": "done",
+      "access_status": "login_wall",
+      "status_reason": "Login wall: public view not available",
+      "method": "agent",
+      "streaming_url": null,
+      "reels_read": 0,
+      "median_views": null
+    },
+    {
+      "handle": "mock_kitchen_c",
+      "reels_url": "https://www.instagram.com/mock_kitchen_c/reels/",
+      "status": "done",
+      "access_status": "accessible",
+      "status_reason": null,
+      "method": "fetch",
+      "streaming_url": null,
+      "reels_read": 9,
+      "median_views": 40000
+    }
+  ],
+  "examples": [
+    {
+      "id": "ex1",
+      "source_url": "https://www.instagram.com/reel/MOCK0000001/",
+      "retrieved_at": "2026-10-30T15:02:42+05:30",
+      "method": "fetch",
+      "access_status": "accessible",
+      "status_reason": null,
+      "handle": "mock_kitchen_a",
+      "caption": "Dahi curry in 2 minutes 🍛\n\nRecipe below #cooking #dahicurry",
+      "hook_line": "Dahi curry in 2 minutes 🍛",
+      "audio_label": "Original audio",
+      "posted_date": "2026-10-24",
+      "likes": 18500,
+      "comments": 640,
+      "views": 412000,
+      "creator_median_views": 133000,
+      "outlier_ratio": 3.1,
+      "cover_url": null,
+      "null_reasons": { "cover_url": "Mock data has no cover image" }
+    },
+    {
+      "id": "ex2",
+      "source_url": "https://www.instagram.com/reel/MOCK0000002/",
+      "retrieved_at": "2026-10-30T15:03:03+05:30",
+      "method": "fetch",
+      "access_status": "accessible",
+      "status_reason": null,
+      "handle": "mock_kitchen_c",
+      "caption": "The creamiest paneer you'll make this week\n#cooking #paneer",
+      "hook_line": "The creamiest paneer you'll make this week",
+      "audio_label": "mock_artist · Mock Song",
+      "posted_date": "2026-10-19",
+      "likes": null,
+      "comments": 212,
+      "views": 96000,
+      "creator_median_views": 40000,
+      "outlier_ratio": 2.4,
+      "cover_url": null,
+      "null_reasons": { "likes": "Likes hidden by the creator", "cover_url": "Mock data has no cover image" }
+    },
+    {
+      "id": "ex3",
+      "source_url": "https://www.instagram.com/reel/MOCK0000003/",
+      "retrieved_at": "2026-10-30T15:03:03+05:30",
+      "method": "fetch",
+      "access_status": "accessible",
+      "status_reason": null,
+      "handle": "mock_kitchen_a",
+      "caption": "5-minute masala chai, no fancy tools\n#chai #cooking",
+      "hook_line": "5-minute masala chai, no fancy tools",
+      "audio_label": "Original audio",
+      "posted_date": "2026-10-11",
+      "likes": 9100,
+      "comments": 188,
+      "views": 279000,
+      "creator_median_views": 133000,
+      "outlier_ratio": 2.1,
+      "cover_url": null,
+      "null_reasons": { "cover_url": "Mock data has no cover image" }
+    }
+  ],
+  "recommendation": {
+    "suggestions": [
+      {
+        "observation": "The payoff arrives at ~6.2 s (m.payoff_at_s), after a title card reading '2-Minute Dahi Curry' (m.text_overlay_first_3s).",
+        "measurement_keys": ["m.payoff_at_s", "m.text_overlay_first_3s"],
+        "evidence_ids": ["ex1", "ex2"],
+        "evidence_summary": "Pattern in 2 of 3 examples: ex1 (3.1x) and ex2 (2.4x) name the finished dish in the caption's first line.",
+        "hypothesis": "Opening on the finished dish may hold more viewers past the first seconds.",
+        "experiment": {
+          "cut_a": "Your draft as it is",
+          "cut_b": "Start on the finished curry; move the title card after 2 s",
+          "measure": "3-second hold and views vs your last 5 Reels"
+        }
+      }
+    ],
+    "source": "llm",
+    "validator_report": [{ "suggestion_index": 0, "dropped": false, "reasons": [] }]
+  },
+  "error": null
+}
