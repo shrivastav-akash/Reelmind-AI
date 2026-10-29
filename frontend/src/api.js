@@ -2,6 +2,9 @@
 // With VITE_USE_MOCK=1 both return the mock jobs in ./mocks, so the UI can be
 // built before the API exists. The mock shapes match backend/models.py (a
 // backend test fails if they drift).
+//
+// Errors thrown here carry a message a user can read as-is, plus `status`
+// (the HTTP code, or 0 when the server couldn't be reached at all).
 import mockDone from './mocks/job.done.json'
 import mockRunning from './mocks/job.running.json'
 import mockFailed from './mocks/job.failed.json'
@@ -9,16 +12,39 @@ import mockFailed from './mocks/job.failed.json'
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK === '1'
 
-// POST /analyze. Resolves to { job_id }; throws with the server's reason on a 400.
+export const UNREACHABLE = "Can't reach the server. Is the backend running?"
+export const NOT_FOUND = "We couldn't find that analysis."
+
+function apiError(message, status) {
+  const err = new Error(message)
+  err.status = status
+  return err
+}
+
+async function request(path, init) {
+  let res
+  try {
+    res = await fetch(`${API_URL}${path}`, init)
+  } catch {
+    throw apiError(UNREACHABLE, 0) // backend not started, Wi-Fi down, CORS
+  }
+  // FastAPI sends {"detail": "..."}; a crash may send HTML, so never trust the body.
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const fallback = res.status === 404 ? NOT_FOUND : `Something went wrong (${res.status}). Try again.`
+    throw apiError(typeof data.detail === 'string' ? data.detail : fallback, res.status)
+  }
+  return data
+}
+
+// POST /analyze. Resolves to { job_id }; a 400 rejects with the server's reason
+// (e.g. "Video is 75 s; the limit is 60 s.").
 export async function analyze(file, topic) {
   if (USE_MOCK) return { job_id: 'mock' }
   const body = new FormData()
   body.append('file', file)
   body.append('topic', topic)
-  const res = await fetch(`${API_URL}/analyze`, { method: 'POST', body })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.detail ?? `Upload failed (${res.status})`)
-  return data
+  return request('/analyze', { method: 'POST', body })
 }
 
 // Mock mode plays "running" twice, then "done", so the UI sees both states.
@@ -34,7 +60,5 @@ function mockJob() {
 // GET /jobs/{id}. Resolves to a Job (see backend/models.py).
 export async function getJob(jobId) {
   if (USE_MOCK) return mockJob()
-  const res = await fetch(`${API_URL}/jobs/${jobId}`)
-  if (!res.ok) throw new Error(`Couldn't load the job (${res.status})`)
-  return res.json()
+  return request(`/jobs/${encodeURIComponent(jobId)}`)
 }
