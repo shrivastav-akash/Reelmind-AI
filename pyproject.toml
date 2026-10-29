@@ -6,5 +6,6 @@ asyncio_default_fixture_loop_scope = "function"
 markers = [
     "live: calls TinyFish or Gemini for real (needs keys in .env, may cost credits)",
     "slow: runs ffmpeg / whisper on the sample clip",
+    "friday: defines done for code built on Fri 30 Oct; fails until then (run with -m friday)",
 ]
-addopts = "-m 'not live'"
+addopts = "-m 'not live and not friday'"
