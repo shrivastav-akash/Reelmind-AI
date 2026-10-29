@@ -1,0 +1,15 @@
+# Pinned to the versions tested on 2026-10-29. Install from the repo root:
+#   uv venv .venv --python 3.12 && uv pip install --python .venv/bin/python -r backend/requirements.txt
+# or: python -m venv .venv && .venv/bin/pip install -r backend/requirements.txt
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+httpx==0.28.1
+pydantic==2.14.1
+python-multipart==0.0.32
+python-dotenv==1.2.4
+tinyfish==0.11.0
+google-genai==2.33.0
+scenedetect[opencv]==0.7.2
+faster-whisper==1.2.1
+pytest==9.2.0
+pytest-asyncio==1.4.1

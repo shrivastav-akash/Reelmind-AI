@@ -1,0 +1,9 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+markers = [
+    "live: calls TinyFish or Gemini for real (needs keys in .env, may cost credits)",
+    "slow: runs ffmpeg / whisper on the sample clip",
+]
+addopts = "-m 'not live'"

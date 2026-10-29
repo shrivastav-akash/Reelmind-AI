@@ -2,3 +2,26 @@ ReelMind AI Deep Idea Analysis.md
 REELMIND_PROJECT_BRIEF.md
 # Planning docs stay on the team laptops, not in the public repo
 docs/
+
+# Secrets
+.env
+frontend/.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Runtime output (may hold scraped page text, never commit)
+data/
+logs/
+samples/raw/
+backend/cache/replay/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
