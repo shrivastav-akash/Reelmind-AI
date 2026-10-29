@@ -1,11 +1,12 @@
 """tinyfish_client against a fake SDK: no network, no credits."""
 
 import asyncio
+from dataclasses import replace
 from datetime import datetime, timezone
 
 import httpx
 import pytest
-from tinyfish import APIConnectionError, PaymentRequiredError
+from tinyfish import APIConnectionError, AuthenticationError, PaymentRequiredError, RateLimitError
 from tinyfish.agent.types import CompleteEvent, ProgressEvent, StartedEvent, StreamingUrlEvent
 from tinyfish.fetch.types import FetchError, FetchResponse, FetchResult
 from tinyfish.runs.types import Run
@@ -139,10 +140,14 @@ def test_caption_words_cannot_fake_a_block():
 # ---------------------------------------------------------------- Fetch
 
 
+def drop_comments(page):
+    return replace(page, text=page.text.replace(" COMMENTS by someone", ""))
+
+
 async def test_fetch_batches_keeps_order_redacts_and_caches(fake, isolated):
     urls = [f"https://ex.com/{i}" for i in range(12)]
-    f = fake(pages={u: {"text": f"body {u} COMMENTS"} for u in urls if not u.endswith("/5")})
-    pages = await tf.fetch_pages(urls, redact=lambda t: t.replace(" COMMENTS", ""))
+    f = fake(pages={u: {"text": f"body {u} COMMENTS by someone"} for u in urls if not u.endswith("/5")})
+    pages = await tf.fetch_pages(urls, redact=drop_comments)
     assert [len(c) for c in f.fetch_calls] == [10, 2]
     assert [p.url for p in pages] == urls
     assert pages[5].error == "404" and not pages[5].ok
@@ -150,7 +155,34 @@ async def test_fetch_batches_keeps_order_redacts_and_caches(fake, isolated):
     assert len(list((isolated.data_dir / "cache").glob("*.json"))) == 11
 
 
-async def test_fetch_falls_back_to_cache_when_the_network_fails(fake):
+async def test_logs_hold_redacted_pages_only(fake, isolated):  # G3
+    fake(pages={"https://ex.com/r": {"text": "caption COMMENTS by someone"}})
+    await tf.fetch_pages(["https://ex.com/r"], redact=drop_comments)
+    for path in [*isolated.logs_dir.rglob("*.json"), *isolated.data_dir.rglob("*.json")]:
+        assert "COMMENTS by someone" not in path.read_text(), path
+
+
+async def test_duplicate_urls_are_fetched_once(fake):
+    f = fake(pages={"https://ex.com/a": {"text": "a"}})
+    pages = await tf.fetch_pages(["https://ex.com/a", "https://ex.com/a"])
+    assert f.fetch_calls == [["https://ex.com/a"]] and [p.text for p in pages] == ["a", "a"]
+
+
+async def test_empty_url_list_makes_no_call(fake):
+    f = fake()
+    assert await tf.fetch_pages([]) == [] and f.fetch_calls == []
+
+
+async def test_cache_never_serves_markdown_for_an_html_request(fake):
+    url = "https://ex.com/reel"
+    fake(pages={url: {"text": "markdown copy"}})
+    await tf.fetch_pages([url], fmt="markdown")
+    fake(fetch_exc=APIConnectionError("wifi down"))
+    [html_page] = await tf.fetch_pages([url], fmt="html", html_head=True)
+    assert html_page.error and not html_page.from_cache  # real bug seen on 29 Oct
+
+
+async def test_fetch_falls_back_to_cache_when_the_network_fails(fake):  # D15
     url = "https://ex.com/reel"
     fake(pages={url: {"text": "first copy"}})
     [live] = await tf.fetch_pages([url])
@@ -161,11 +193,37 @@ async def test_fetch_falls_back_to_cache_when_the_network_fails(fake):
     assert uncached.error.startswith("Fetch failed")
 
 
-async def test_no_credits_is_an_account_error(fake):
+async def test_every_url_failing_returns_errors_not_an_exception(fake):
+    fake(pages={})
+    pages = await tf.fetch_pages(["https://ex.com/1", "https://ex.com/2"], fallback_to_cache=False)
+    assert all(p.error == "404" for p in pages)
+
+
+async def test_no_credits_is_an_account_error(fake):  # D16
     resp = httpx.Response(402, request=httpx.Request("POST", "https://api.fetch.tinyfish.ai"))
     fake(fetch_exc=PaymentRequiredError("no credits", response=resp))
     with pytest.raises(tf.TinyFishAccountError, match="402"):
         await tf.fetch_pages(["https://ex.com"])
+
+
+async def test_wrong_key_is_an_account_error(fake):  # D17
+    resp = httpx.Response(401, request=httpx.Request("POST", "https://api.fetch.tinyfish.ai"))
+    fake(fetch_exc=AuthenticationError("bad key", response=resp))
+    with pytest.raises(tf.TinyFishAccountError, match="rejected the API key"):
+        await tf.fetch_pages(["https://ex.com"])
+
+
+async def test_rate_limit_is_reported(fake):  # D18
+    resp = httpx.Response(429, request=httpx.Request("POST", "https://agent.tinyfish.ai"))
+
+    class Limited(FakeStream):
+        async def __aenter__(self):
+            raise RateLimitError("slow down", response=resp)
+
+    f = fake()
+    f.stream = lambda **kw: Limited([])
+    out = await tf.run_agent("u", "g", {})
+    assert out.access_status == "blocked" and "429" in out.status_reason
 
 
 async def test_missing_key_is_an_account_error(isolated, monkeypatch):

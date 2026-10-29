@@ -180,18 +180,19 @@ def _log(kind: str, payload: dict[str, Any]) -> None:
     (folder / f"{now.strftime('%H%M%S_%f')}-tinyfish-{kind}.json").write_text(text)
 
 
-def _cache_path(url: str):
-    return settings.data_dir / "cache" / f"{hashlib.sha1(url.encode()).hexdigest()}.json"
+def _cache_path(url: str, fmt: str):
+    # The format is part of the key: a markdown copy must never stand in for an html request.
+    return settings.data_dir / "cache" / f"{hashlib.sha1(f'{fmt}:{url}'.encode()).hexdigest()}.json"
 
 
-def _cache_put(page: FetchedPage) -> None:
-    path = _cache_path(page.url)
+def _cache_put(page: FetchedPage, fmt: str) -> None:
+    path = _cache_path(page.url, fmt)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(asdict(page), ensure_ascii=False))
 
 
-def _cache_get(url: str) -> FetchedPage | None:
-    path = _cache_path(url)
+def _cache_get(url: str, fmt: str) -> FetchedPage | None:
+    path = _cache_path(url, fmt)
     if not path.exists():
         return None
     data = json.loads(path.read_text())
@@ -209,18 +210,22 @@ async def fetch_pages(
     fmt: str = "markdown",
     html_head: bool = False,
     purpose: str | None = None,
-    redact: Callable[[str], str] | None = None,
+    redact: Callable[[FetchedPage], FetchedPage] | None = None,
     fallback_to_cache: bool = True,
 ) -> list[FetchedPage]:
-    """Fetch public pages (free), in input order, batching 10 per call.
+    """Fetch public pages (free), in input order, batching 10 per call. Duplicate URLs are fetched once.
 
-    `redact` runs on page text before it is cached or returned; Instagram pages
-    pass instagram_parse.strip_comments so commenter usernames are never stored.
+    `redact` runs on each page before it is cached or returned; Instagram Reel pages
+    pass instagram_parse.redact_reel_page so comments, commenter usernames, their
+    profile links and avatars are never stored.
     """
+    if not urls:
+        return []
     client = _client("fetch")
     pages: dict[str, FetchedPage] = {}
-    for i in range(0, len(urls), FETCH_BATCH):
-        batch = urls[i : i + FETCH_BATCH]
+    unique = list(dict.fromkeys(urls))
+    for i in range(0, len(unique), FETCH_BATCH):
+        batch = unique[i : i + FETCH_BATCH]
         request = {"urls": batch, "format": fmt, "html_head": html_head, "purpose": purpose}
         started = time.monotonic()
         try:
@@ -238,13 +243,12 @@ async def fetch_pages(
                 raise acct from exc
             _log("fetch", {"request": request, "exception": repr(exc), "seconds": time.monotonic() - started})
             for url in batch:
-                pages[url] = _fallback(url, f"Fetch failed: {exc}", fallback_to_cache)
+                pages[url] = _fallback(url, fmt, f"Fetch failed: {exc}", fallback_to_cache)
             continue
 
-        _log("fetch", {"request": request, "response": resp.model_dump(), "seconds": time.monotonic() - started})
         retrieved = _now()
+        cleaned: list[FetchedPage] = []
         for r in resp.results:
-            text = redact(r.text) if (redact and r.text) else r.text
             page = FetchedPage(
                 url=r.url,
                 retrieved_at=retrieved,
@@ -252,20 +256,26 @@ async def fetch_pages(
                 title=r.title,
                 description=r.description,
                 published_date=r.published_date,
-                text=text,
+                text=r.text,
                 links=list(r.links or []),
                 image_links=list(r.image_links or []),
             )
+            if redact:
+                page = redact(page)
             pages[r.url] = page
-            _cache_put(page)
+            cleaned.append(page)
+            _cache_put(page, fmt)
+        # Log the redacted pages, not the raw response, so logs/ never holds comments either.
+        _log("fetch", {"request": request, "pages": [asdict(p) for p in cleaned],
+                       "errors": [e.model_dump() for e in resp.errors], "seconds": time.monotonic() - started})
         for e in resp.errors:
-            pages[e.url] = _fallback(e.url, e.error, fallback_to_cache)
+            pages[e.url] = _fallback(e.url, fmt, e.error, fallback_to_cache)
 
-    return [pages.get(u) or _fallback(u, "No result returned for this URL", fallback_to_cache) for u in urls]
+    return [pages.get(u) or _fallback(u, fmt, "No result returned for this URL", fallback_to_cache) for u in urls]
 
 
-def _fallback(url: str, error: str, use_cache: bool) -> FetchedPage:
-    if use_cache and (cached := _cache_get(url)):
+def _fallback(url: str, fmt: str, error: str, use_cache: bool) -> FetchedPage:
+    if use_cache and (cached := _cache_get(url, fmt)):
         return cached
     return FetchedPage(url=url, retrieved_at=_now(), error=error)
 

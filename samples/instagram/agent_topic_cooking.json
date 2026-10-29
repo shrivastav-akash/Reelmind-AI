@@ -1,0 +1,49 @@
+{
+ "retrieved_at": "2026-10-29T11:51:14+00:00",
+ "steps": 3,
+ "duration_s": 85.5,
+ "access_status": "accessible",
+ "result": {
+  "topic": "Instagram #cooking Reels creators",
+  "blocked": false,
+  "blocked_reason": "",
+  "creators": [
+   {
+    "handle": "eylems_kitchen",
+    "reel_url": "https://www.instagram.com/reel/DWdwvMnjEte/?utm_source=popular_topic_grid",
+    "reason": "Posts approachable recipes like garlic bread with English translations, feels like a personal home-cooking account",
+    "reason_raw_had_numbers": true
+   },
+   {
+    "handle": "shifhaneen",
+    "reel_url": "https://www.instagram.com/reel/DRzRDjCDacj/?utm_source=popular_topic_grid",
+    "reason": "Individual creator sharing quick easy recipes like fastest food in the world with avocado and eggs",
+    "reason_raw_had_numbers": true
+   },
+   {
+    "handle": "_kiran_ki_rasoi_",
+    "reel_url": "https://www.instagram.com/reel/DXRApYJES9i/?utm_source=popular_topic_grid",
+    "reason": "Individual creator, 'Kirans kitchen' suggests a personal cooking account, shares indulgent dishes like milky cheese pasta",
+    "reason_raw_had_numbers": true
+   },
+   {
+    "handle": "baiba.tropina",
+    "reel_url": "https://www.instagram.com/reel/DU0daetjHeB/?utm_source=popular_topic_grid",
+    "reason": "Individual creator posting easy meal recipes with chicken, approachable home-style cooking content",
+    "reason_raw_had_numbers": true
+   },
+   {
+    "handle": "pov__gil",
+    "reel_url": "https://www.instagram.com/reel/DXzX51QgLaT/?utm_source=popular_topic_grid",
+    "reason": "Individual creator with ASMR-style easy recipe content like making a Crunchwrap Supreme",
+    "reason_raw_had_numbers": true
+   },
+   {
+    "handle": "burnt_pellet_bbq",
+    "reel_url": "https://www.instagram.com/reel/DVBzRI2AN_t/?utm_source=popular_topic_grid",
+    "reason": "Individual creator sharing detailed BBQ and comfort food recipes with step-by-step instructions",
+    "reason_raw_had_numbers": true
+   }
+  ]
+ }
+}

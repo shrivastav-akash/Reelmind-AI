@@ -24,6 +24,9 @@ class ReelCounts:
     views: int | None
     likes: int | None = None
     comments: int | None = None
+    # Pinned Reels are a creator's chosen old hits (one had 281M views on 29 Oct). They are
+    # neither "recent" nor "normal", so they count towards neither the median nor the outliers.
+    pinned: bool = False
 
 
 @dataclass
@@ -45,13 +48,15 @@ def creator_median(views: list[int | None]) -> int | None:
 
 
 def score_creator(handle: str, reels: list[ReelCounts]) -> tuple[int | None, list[Candidate]]:
-    """Median for this creator and every Reel's ratio against it. (None, []) if too few views are visible."""
-    med = creator_median([r.views for r in reels])
+    """Median for this creator and every Reel's ratio against it. (None, []) if too few views are visible.
+    Pinned Reels are left out of both."""
+    recent = [r for r in reels if not r.pinned]
+    med = creator_median([r.views for r in recent])
     if not med:
         return None, []
     seen: set[str] = set()
     out = []
-    for r in reels:
+    for r in recent:
         if not r.views or r.reel_url in seen:
             continue
         seen.add(r.reel_url)

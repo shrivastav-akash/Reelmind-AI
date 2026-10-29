@@ -1,0 +1,13 @@
+{
+ "status": "COMPLETED",
+ "result": {
+  "handle": "pov__gil",
+  "blocked": true,
+  "blocked_reason": "The page is blocked by an Instagram login wall. The URL redirects to /accounts/login/ and displays a login form (username/email and password fields) without showing any reel tiles, view counts, like counts, or comment counts. Access to the Reels tab requires authentication, and the task specifies not to log in.",
+  "reels": []
+ },
+ "access_status": "login_wall",
+ "status_reason": "Login wall: public view not available",
+ "steps": 4,
+ "duration_s": 39.0
+}

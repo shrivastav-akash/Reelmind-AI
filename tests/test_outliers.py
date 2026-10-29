@@ -41,3 +41,54 @@ def test_pick_outliers_threshold_order_and_per_creator_cap():
 def test_pick_outliers_top_n():
     picked = pick_outliers([cand(h, 3.0) for h in "abcdefg"], top_n=5)
     assert len(picked) == 5
+
+
+# ---------------------------------------------------------------- real-user corner cases
+
+
+def test_pinned_reels_are_ignored():  # D11: a pinned old hit must not set the bar or be "evidence"
+    rs = reels(100, 120, 110, 105) + [ReelCounts("https://www.instagram.com/reel/PINNED/", 281_000_000, pinned=True)]
+    med, cands = score_creator("a", rs)
+    assert med == 107 and all("PINNED" not in c.reel_url for c in cands)
+
+
+def test_flat_creator_has_no_outliers():  # D12
+    _, cands = score_creator("a", reels(5000, 5100, 4900, 5050, 4980))
+    assert pick_outliers(cands) == []
+
+
+def test_exactly_2x_counts_but_just_under_does_not():
+    _, cands = score_creator("a", reels(100, 100, 100, 200, 199))
+    assert [c.views for c in pick_outliers(cands)] == [200]
+
+
+def test_only_pinned_reels_means_no_median():
+    rs = [ReelCounts(f"u{i}", 1000, pinned=True) for i in range(5)]
+    assert score_creator("a", rs) == (None, [])
+
+
+def test_pick_outliers_with_nothing():
+    assert pick_outliers([]) == []
+
+
+def test_real_cooking_creators_give_outliers_from_several_creators():
+    """The 11 grids TinyFish Fetch read on 29 Oct (samples/instagram/)."""
+    import json
+
+    from backend import instagram_parse as ig
+    from backend.tinyfish_client import FetchedPage
+
+    from .conftest import SAMPLES
+
+    cands = []
+    for path in sorted((SAMPLES / "instagram").glob("grid_*.json")):
+        p = FetchedPage(**json.loads(path.read_text()))
+        handle = path.stem.removeprefix("grid_")
+        g = ig.parse_grid(p.text, p.links, p.description, handle)
+        med, cs = score_creator(handle, [ReelCounts(t.reel_url, t.views, t.likes, t.comments, t.pinned) for t in g.tiles])
+        assert med is not None
+        cands += cs
+    picked = pick_outliers(cands)
+    assert len(picked) == 5 and all(c.outlier_ratio >= 2.0 for c in picked)
+    assert len({c.handle for c in picked}) >= 3
+    assert picked == sorted(picked, key=lambda c: -c.outlier_ratio)

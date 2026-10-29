@@ -5,7 +5,7 @@ jobs in samples/job.*.json follow this shape exactly. To change it: edit this
 file first, then the mock jobs, then the UI. tests/test_models.py fails if the
 mocks drift from this file.
 
-Also here: the shapes we ask external services for (`AgentGrid` from the
+Also here: the shapes we ask external services for (`AgentTopicPicks` from the
 TinyFish Agent, `VisionResult` and `SuggestionSet` from Gemini), so every
 external payload is validated before we trust it.
 """
@@ -90,16 +90,24 @@ class VisionResult(BaseModel):
 
 
 class Creator(BaseModel):
-    """One creator Niche Scout looked at. Drives the per-creator rows in the live panel."""
+    """One creator Niche Scout looked at. Drives the per-creator rows in the live panel.
+
+    Picked by the TinyFish Agent on the topic page (picked_by="agent"), or by code from
+    the Fetch copy of that page when the Agent fails or runs late (picked_by="code").
+    Their Reels grid is always read with Fetch: the Agent's browser gets a login wall there.
+    """
 
     handle: str
     reels_url: str
+    picked_by: Literal["agent", "code", "saved_list"] = "code"
+    pick_reason: str | None = None  # the Agent's words; numbers are stripped (it misreads them)
+    followers: int | None = None
     status: Literal["pending", "running", "done"] = "pending"
     access_status: AccessStatus | None = None
     status_reason: str | None = None
     method: Method | None = None
-    streaming_url: str | None = None  # live browser view of the Agent run, if any
     reels_read: int = 0
+    pinned_skipped: int = 0  # pinned Reels are old hits, left out of the median
     median_views: int | None = None
 
 
@@ -126,22 +134,19 @@ class Example(BaseModel):
     null_reasons: dict[str, str] = Field(default_factory=dict)  # field -> why it is None
 
 
-class GridReel(BaseModel):
-    """One tile as the Agent reports it. Counts stay strings ("18.5K") until instagram_parse.to_int."""
-
-    reel_url: str
-    views: str | None = None
-    likes: str | None = None
-    comments: str | None = None
-
-
-class AgentGrid(BaseModel):
-    """Validated result of the Agent's grid-reading run (matches GRID_SCHEMA in niche_scout.py)."""
-
+class AgentCreatorPick(BaseModel):
     handle: str
+    reel_url: str | None = None
+    reason: str | None = None
+
+
+class AgentTopicPicks(BaseModel):
+    """Validated result of the Agent's topic-page run (matches TOPIC_SCHEMA in niche_scout.py)."""
+
+    topic: str | None = None
     blocked: bool
     blocked_reason: str | None = None
-    reels: list[GridReel] = Field(default_factory=list)
+    creators: list[AgentCreatorPick] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------- recommendation
@@ -192,6 +197,7 @@ class Job(BaseModel):
     replay_recorded_at: datetime | None = None
     stages: Stages = Field(default_factory=Stages)
     events: list[Event] = Field(default_factory=list)
+    live_view_url: str | None = None  # TinyFish Agent's live browser while it reads the topic page
     video: VideoMeasurements | None = None
     creators: list[Creator] = Field(default_factory=list)
     examples: list[Example] = Field(default_factory=list)

@@ -20,7 +20,9 @@ from pathlib import Path
 from backend.models import VideoMeasurements
 
 MAX_SECONDS = 60
+MIN_SECONDS = 0.5
 MAX_BYTES = 50 * 1024 * 1024
+IMAGE_CODECS = {"png", "mjpeg", "jpeg2000", "bmp", "gif", "webp", "tiff", "heif", "hevc_image"}
 ALLOWED_SUFFIXES = {".mp4", ".mov"}
 FRAME_TIMES = (0.0, 0.5, 1.0, 1.5, 2.0, 3.0)  # the hook window, plus one frame after each cut
 MAX_FRAMES = 12
@@ -54,16 +56,23 @@ class Frame:
 def probe(path: Path) -> dict:
     """Duration and whether there is an audio track, via ffprobe."""
     out = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=codec_type", "-of", "json", str(path)],
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=codec_type,codec_name", "-of", "json", str(path)],
         capture_output=True, text=True,
     )
     if out.returncode != 0:
         raise VideoRejected("This file isn't a readable video.")
     data = json.loads(out.stdout or "{}")
-    kinds = {s.get("codec_type") for s in data.get("streams", [])}
+    streams = data.get("streams", [])
+    kinds = {s.get("codec_type") for s in streams}
     if "video" not in kinds:
         raise VideoRejected("This file has no video track.")
-    return {"duration_s": float(data.get("format", {}).get("duration") or 0.0), "has_audio": "audio" in kinds}
+    # ffprobe calls a photo a one-frame "video" stream: a renamed .jpg/.png must not get through.
+    if all(s.get("codec_name") in IMAGE_CODECS for s in streams if s.get("codec_type") == "video"):
+        raise VideoRejected("This looks like a photo, not a video.")
+    duration = float(data.get("format", {}).get("duration") or 0.0)
+    if duration < MIN_SECONDS:
+        raise VideoRejected("This video is too short to analyse (under half a second).")
+    return {"duration_s": duration, "has_audio": "audio" in kinds}
 
 
 def guard(path: Path, filename: str | None = None) -> dict:

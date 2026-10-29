@@ -25,3 +25,6 @@ frontend/dist/
 
 # OS
 .DS_Store
+
+# Claude Code personal settings (launch.json is shared)
+.claude/settings.local.json

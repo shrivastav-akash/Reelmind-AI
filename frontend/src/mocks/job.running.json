@@ -6,26 +6,116 @@
   "replay": false,
   "replay_recorded_at": null,
   "stages": {
-    "video": { "status": "done", "reason": null },
-    "scout": { "status": "running", "reason": null },
-    "recommend": { "status": "pending", "reason": null }
+    "video": {
+      "status": "done",
+      "reason": null
+    },
+    "scout": {
+      "status": "running",
+      "reason": null
+    },
+    "recommend": {
+      "status": "pending",
+      "reason": null
+    }
   },
   "events": [
-    { "t": 0.1, "source": "system", "kind": "info", "message": "MOCK DATA for building the UI. Not a real run.", "data": null },
-    { "t": 0.4, "source": "scout", "kind": "progress", "message": "Opening the #cooking topic page", "data": { "url": "https://www.instagram.com/explore/tags/cooking/" } },
-    { "t": 3.2, "source": "scout", "kind": "creator", "message": "Picked 3 creators: @mock_kitchen_a, @mock_kitchen_b, @mock_kitchen_c", "data": null },
-    { "t": 4.0, "source": "scout", "kind": "progress", "message": "Opening @mock_kitchen_a's Reels tab (Agent)", "data": { "handle": "mock_kitchen_a" } },
-    { "t": 4.1, "source": "scout", "kind": "progress", "message": "Opening @mock_kitchen_b's Reels tab (Agent)", "data": { "handle": "mock_kitchen_b" } },
-    { "t": 5.1, "source": "scout", "kind": "streaming_url", "message": "Live browser view ready for @mock_kitchen_a", "data": { "handle": "mock_kitchen_a", "url": "https://example.com/mock-live-view" } },
-    { "t": 6.0, "source": "video", "kind": "progress", "message": "Found 7 cuts, 1 in the first 3 s", "data": null },
-    { "t": 9.5, "source": "video", "kind": "progress", "message": "Transcript ready: first words at 0.4 s", "data": null },
-    { "t": 14.0, "source": "video", "kind": "progress", "message": "Payoff estimated at ~6.2 s", "data": null },
-    { "t": 21.0, "source": "scout", "kind": "progress", "message": "@mock_kitchen_a: reading the visible Reel tiles", "data": { "handle": "mock_kitchen_a" } },
-    { "t": 31.0, "source": "scout", "kind": "outlier", "message": "3.1x @mock_kitchen_a's median (412K vs 133K)", "data": { "example_id": "ex1" } }
+    {
+      "t": 0.1,
+      "source": "system",
+      "kind": "info",
+      "message": "MOCK DATA for building the UI. Not a real run.",
+      "data": null
+    },
+    {
+      "t": 0.4,
+      "source": "scout",
+      "kind": "progress",
+      "message": "TinyFish Agent is opening the #cooking topic page",
+      "data": {
+        "url": "https://www.instagram.com/explore/tags/cooking/"
+      }
+    },
+    {
+      "t": 2.1,
+      "source": "scout",
+      "kind": "streaming_url",
+      "message": "Live browser view ready",
+      "data": {
+        "url": "https://example.com/mock-live-view"
+      }
+    },
+    {
+      "t": 2.5,
+      "source": "scout",
+      "kind": "progress",
+      "message": "Fetch read the #cooking topic page: 12 creators listed",
+      "data": null
+    },
+    {
+      "t": 6.0,
+      "source": "video",
+      "kind": "progress",
+      "message": "Found 7 cuts, 1 in the first 3 s",
+      "data": null
+    },
+    {
+      "t": 9.5,
+      "source": "video",
+      "kind": "progress",
+      "message": "Transcript ready: first words at 0.4 s",
+      "data": null
+    },
+    {
+      "t": 14.0,
+      "source": "video",
+      "kind": "progress",
+      "message": "Payoff estimated at ~6.2 s",
+      "data": null
+    },
+    {
+      "t": 18.0,
+      "source": "scout",
+      "kind": "progress",
+      "message": "Agent: Extract reel creator details from the cooking tag page",
+      "data": null
+    },
+    {
+      "t": 52.0,
+      "source": "scout",
+      "kind": "creator",
+      "message": "Agent picked 3 creators: @mock_kitchen_a, @mock_kitchen_b, @mock_kitchen_c",
+      "data": null
+    },
+    {
+      "t": 53.0,
+      "source": "scout",
+      "kind": "progress",
+      "message": "Reading 3 Reels grids with Fetch",
+      "data": null
+    },
+    {
+      "t": 57.0,
+      "source": "scout",
+      "kind": "outlier",
+      "message": "3.1x @mock_kitchen_a's median (412K vs 133K)",
+      "data": {
+        "example_id": "ex1"
+      }
+    }
   ],
+  "live_view_url": "https://example.com/mock-live-view",
   "video": {
     "duration_s": 30.1,
-    "cut_times_s": [1.8, 6.2, 9.9, 14.0, 18.5, 22.7, 26.4],
+    "cut_times_s": [
+      1.8,
+      6.2,
+      9.9,
+      14.0,
+      18.5,
+      22.7,
+      26.4
+    ],
     "cuts_first_3s": 1,
     "avg_shot_length_s": 3.76,
     "transcript": "Today I'm making a two minute dahi curry. First whisk the curd, then temper the spices, simmer for two minutes, and here it is.",
@@ -44,10 +134,13 @@
       "status": "done",
       "access_status": "accessible",
       "status_reason": null,
-      "method": "agent",
-      "streaming_url": "https://example.com/mock-live-view",
-      "reels_read": 12,
-      "median_views": 133000
+      "method": "fetch",
+      "reels_read": 10,
+      "median_views": 133000,
+      "picked_by": "agent",
+      "pick_reason": "Home cook posting quick everyday recipes",
+      "followers": 210000,
+      "pinned_skipped": 2
     },
     {
       "handle": "mock_kitchen_b",
@@ -55,10 +148,13 @@
       "status": "running",
       "access_status": null,
       "status_reason": null,
-      "method": "agent",
-      "streaming_url": null,
+      "method": "fetch",
       "reels_read": 0,
-      "median_views": null
+      "median_views": null,
+      "picked_by": "agent",
+      "pick_reason": "Individual creator with step-by-step curries",
+      "followers": 48000,
+      "pinned_skipped": 0
     },
     {
       "handle": "mock_kitchen_c",
@@ -67,9 +163,12 @@
       "access_status": null,
       "status_reason": null,
       "method": null,
-      "streaming_url": null,
       "reels_read": 0,
-      "median_views": null
+      "median_views": null,
+      "picked_by": "agent",
+      "pick_reason": "Small creator focused on paneer dishes",
+      "followers": 36000,
+      "pinned_skipped": 1
     }
   ],
   "examples": [
@@ -91,7 +190,9 @@
       "creator_median_views": 133000,
       "outlier_ratio": 3.1,
       "cover_url": null,
-      "null_reasons": { "cover_url": "Mock data has no cover image" }
+      "null_reasons": {
+        "cover_url": "Mock data has no cover image"
+      }
     }
   ],
   "recommendation": null,

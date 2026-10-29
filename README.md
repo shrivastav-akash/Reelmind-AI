@@ -20,7 +20,7 @@ Built by **Team Ctrl Alt Fin** for **Swim with TinyFish** (Presidency University
 
 1. **You upload** an unposted draft (≤ 60 s) and type a topic, e.g. `cooking`.
 2. **We measure your video:** cuts, pacing, first spoken words, on-screen text in the first 3 seconds, and an *estimated* payoff time.
-3. **Niche Scout (TinyFish) researches live:** it opens the topic page, picks a few creators, reads their Reels grids and flags Reels that did **at least 2x that creator's own median views**.
+3. **Niche Scout (TinyFish) researches live:** an agent opens the topic page and picks a few creators, then their Reels grids are read and Reels that did **at least 2x that creator's own median views** are flagged.
 4. **You get one card:** **Observed → Evidence → Hypothesis → Experiment**, with links to the outlier Reels and a Cut A vs Cut B plan.
 
 We never promise virality. You get a test to run, and it says which evidence it rests on.
@@ -31,11 +31,13 @@ TinyFish is the research engine, not a side feature. Niche Scout is a multi-step
 
 | Step | What happens | TinyFish API |
 |---|---|---|
-| 1 | Open the topic page (`/explore/tags/{topic}/`) and collect creators and Reel links | **Fetch** |
-| 2 | Open each creator's Reels tab and read views, likes and comments for up to 12 Reels as structured JSON, with a live browser view | **Agent** (`run-sse`, `output_schema`) |
-| 3 | Compute each creator's median views and each Reel's **outlier ratio** | our code |
-| 4 | Open the outlier Reels and read caption, hook line, audio label, date and cover | **Fetch** |
-| fallback | Find creators if the topic page is walled | **Search** |
+| 1 | An agent opens the public topic page (`/explore/tags/{topic}/`) and **picks up to 4 individual creators** (not brands), returning structured JSON while you watch its live browser | **Agent** (`run-sse`, `output_schema`) |
+| 1b | At the same time, the same page is read directly, so code can pick creators if the agent hits a wall or runs late | **Fetch** |
+| 2 | Read each picked creator's public Reels grid: views, likes and comments for 12 Reels | **Fetch** |
+| 3 | Compute each creator's median views (pinned old hits left out) and each Reel's **outlier ratio** | our code |
+| 4 | Open the outlier Reels and read caption, hook line, date, cover and (when shown) audio | **Fetch** |
+
+Why this split? In our tests on 29 Oct the agent's browser got a login wall on creators' Reels tabs but read the topic page fine, while Fetch read all 11 creators' grids. We never try to get past a login wall.
 
 Why an outlier ratio? A Reel at 3x its creator's median from a 20k account is better evidence for a small creator than a Reel from an account with 268M followers.
 
@@ -47,8 +49,8 @@ Why an outlier ratio? A Reel at 3x its creator's median from a 20k account is be
         ┌────────────┴─────────────┐   both start at once
         ▼                          ▼
  VIDEO ANALYSIS (Python)       NICHE SCOUT (TinyFish)
-  cuts · transcript ·           topic page → creators →
-  frames → Gemini vision        Reel grids → outliers → Reel pages
+  cuts · transcript ·           Agent picks creators on topic page →
+  frames → Gemini vision        Fetch reads grids → outliers → Reel pages
         └────────────┬─────────────┘
                      ▼
      Gemini recommendation + grounding validator
@@ -93,6 +95,7 @@ cp .env.example .env          # then fill in your keys
 python -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
+python scripts/download_models.py   # once: speech model, so venue Wi-Fi doesn't matter
 uvicorn backend.main:app --reload --port 8000
 ```
 
@@ -103,6 +106,15 @@ cd frontend
 npm install
 npm run dev                   # http://localhost:5173
 ```
+
+**Tests:**
+
+```bash
+.venv/bin/pytest                     # backend: parsers on real pages, video pipeline, privacy, grounding (no network)
+cd frontend && npm test              # frontend data layer
+```
+
+Live checks against TinyFish and Gemini are in `scripts/spike_*.py` (Fetch and Gemini are free; Agent runs cost credits).
 
 **Replay mode** (for demos on bad Wi-Fi): set `REPLAY=1` in `.env` and restart the backend. The UI shows "Replay of a recorded run, \<timestamp>" the whole time. A replay is never presented as live.
 
