@@ -126,7 +126,7 @@ backend/     FastAPI app: job runner, TinyFish client, Niche Scout, video pipeli
 frontend/    React + Vite single page: upload, live research panel, recommendation card
 samples/     demo clip and saved Instagram fetch outputs for tests
 tests/       parser, outlier-maths and validator tests
-docs/        PRD, TRD, decisions, handover
+scripts/     setup helpers and live TinyFish / Gemini test scripts
 ```
 
 ## Responsible data use
@@ -161,10 +161,7 @@ docs/        PRD, TRD, decisions, handover
 
 ## Docs
 
-- [Product requirements (PRD)](docs/PRD.md)
-- [Technical requirements (TRD)](docs/TRD.md)
-- [Decisions log](docs/decisions.md) · [Handover](docs/handover.md)
-- [Project brief](REELMIND_PROJECT_BRIEF.md) · [Idea analysis](ReelMind%20AI%20Deep%20Idea%20Analysis.md)
+The planning docs (PRD, TRD, implementation plan, decisions, handover) and the project brief are kept privately by the team and are not in this repo.
 
 ## Thanks
 
