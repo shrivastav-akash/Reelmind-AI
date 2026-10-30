@@ -8,6 +8,12 @@
       "port": 8000
     },
     {
+      "name": "frontend",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd frontend && VITE_USE_MOCK=0 VITE_API_URL=http://localhost:8000 npm run dev -- --port 5173 --strictPort"],
+      "port": 5173
+    },
+    {
       "name": "frontend-mock",
       "runtimeExecutable": "sh",
       "runtimeArgs": ["-c", "cd frontend && VITE_USE_MOCK=1 npm run dev -- --port 5173 --strictPort"],

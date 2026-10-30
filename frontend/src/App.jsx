@@ -133,7 +133,9 @@ export default function App() {
                   ? "We couldn't reach enough public Reels in this niche to back a suggestion, so there's no card. The measurements and statuses here are still real."
                   : job.stages.recommend.status === 'skipped' || job.stages.recommend.status === 'failed'
                     ? `No suggestion: ${job.stages.recommend.reason}`
-                    : 'Waiting for the video and the research to finish…'}
+                    : job.stages.recommend.status === 'running'
+                      ? 'Writing a suggestion. It is checked against your measurements and the examples before it shows.'
+                      : 'Waiting for the video and the research to finish…'}
               </p>
             </section>
           )}

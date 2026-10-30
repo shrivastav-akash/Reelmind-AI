@@ -2,6 +2,8 @@ import { seconds } from '../format'
 
 // What code measured in the draft, plus the vision model's judgements marked "(estimated)".
 export default function VideoBreakdown({ video, stage }) {
+  // Measurements arrive before the vision step finishes: say it's still looking, not "not checked".
+  const pending = stage?.status === 'running' ? 'Gemini is still looking at the frames…' : 'Not checked'
   return (
     <section className="panel" aria-label="Your video">
       <h2>Your video</h2>
@@ -38,7 +40,7 @@ export default function VideoBreakdown({ video, stage }) {
             <dd>
               {video.text_overlay_first_3s
                 ? `“${video.text_overlay_first_3s}” (estimated)`
-                : video.null_reasons.text_overlay_first_3s ?? 'Not checked'}
+                : video.null_reasons.text_overlay_first_3s ?? pending}
             </dd>
           </div>
           <div>
@@ -50,7 +52,7 @@ export default function VideoBreakdown({ video, stage }) {
                   {video.payoff_reason && <span className="muted small">{video.payoff_reason}</span>}
                 </>
               ) : (
-                video.null_reasons.payoff_at_s ?? 'Not checked'
+                video.null_reasons.payoff_at_s ?? pending
               )}
             </dd>
           </div>

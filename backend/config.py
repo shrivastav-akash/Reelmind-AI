@@ -23,6 +23,8 @@ class Settings:
     gemini_api_key: str = field(repr=False)
     llm_model: str
     llm_fallback_model: str
+    # Per Gemini attempt. On 30 Oct one vision call hung for minutes, which froze the whole job.
+    llm_timeout_s: float
     # REPLAY=1 serves a recorded run instead of live calls (demo safety on bad Wi-Fi).
     replay: bool
     data_dir: Path
@@ -36,6 +38,7 @@ def _load() -> Settings:
         gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
         llm_model=os.getenv("LLM_MODEL", "gemini-3.8-flash"),
         llm_fallback_model=os.getenv("LLM_FALLBACK_MODEL", "gemini-3.5-flash-lite"),
+        llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S", "40")),
         replay=os.getenv("REPLAY", "0") == "1",
         data_dir=ROOT / "data",
         logs_dir=ROOT / "logs",

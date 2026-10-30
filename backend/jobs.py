@@ -132,6 +132,7 @@ async def run_job(job_id: str) -> Job:
         except Exception as exc:
             _fail(job.stages.video, f"Couldn't measure the video: {exc}")
             emit("video", "error", job.stages.video.reason)
+        save_job(job)  # results reach the UI now, not at the other stream's next event
 
     async def scout_stream() -> None:
         job.stages.scout.status = "running"
@@ -147,6 +148,7 @@ async def run_job(job_id: str) -> Job:
         except Exception as exc:
             _fail(job.stages.scout, f"Niche Scout stopped: {exc}")
             emit("scout", "error", job.stages.scout.reason)
+        save_job(job)  # creators and examples show while the video step may still be running
 
     try:
         job.status = "running"

@@ -3,8 +3,9 @@
 Called by vision.py and recommend.py (Fri). One function, generate_json():
 send a prompt (plus optional labelled images) and get back an instance of a
 pydantic model.
-- Model from LLM_MODEL; on a rate limit, server error or network error, one
-  retry on LLM_FALLBACK_MODEL. A rejected key is not retried (it can't succeed).
+- Model from LLM_MODEL; on a rate limit, server error, network error or no answer
+  within LLM_TIMEOUT_S, one retry on LLM_FALLBACK_MODEL. A rejected key is not
+  retried (it can't succeed).
 - JSON is enforced twice: Gemini's response_schema, then pydantic here.
 - Every call is logged to logs/ (prompt, model, seconds, raw answer); images
   are logged as sizes only, keys are scrubbed.
@@ -12,6 +13,7 @@ pydantic model.
 
 from __future__ import annotations
 
+import asyncio
 import time
 from typing import TypeVar
 
@@ -63,7 +65,14 @@ async def generate_json(
         log = {"model": model, "schema": schema.__name__, "prompt": prompt,
                "images": [{"label": lbl, "bytes": len(b)} for lbl, b in images]}
         try:
-            resp = await client.aio.models.generate_content(model=model, contents=_contents(prompt, images), config=config)
+            # Our own ceiling per attempt: a call that never answers must not freeze the job.
+            async with asyncio.timeout(settings.llm_timeout_s):
+                resp = await client.aio.models.generate_content(model=model, contents=_contents(prompt, images), config=config)
+        except TimeoutError:
+            log.update(error=f"no answer within {settings.llm_timeout_s:g} s", seconds=round(time.monotonic() - started, 2))
+            _log(log)
+            last_error = f"{model}: no answer within {settings.llm_timeout_s:g} s"
+            continue
         except errors.APIError as exc:
             log.update(error=f"{exc.code}: {exc}", seconds=round(time.monotonic() - started, 2))
             _log(log)
