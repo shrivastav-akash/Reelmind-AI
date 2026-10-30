@@ -9,7 +9,8 @@ import mockDone from './mocks/job.done.json'
 import mockRunning from './mocks/job.running.json'
 import mockFailed from './mocks/job.failed.json'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+// `||`, not `??`: a blank VITE_API_URL= line would otherwise send requests to the Vite server.
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK === '1'
 
 export const UNREACHABLE = "Can't reach the server. Is the backend running?"
@@ -29,11 +30,13 @@ async function request(path, init) {
     throw apiError(UNREACHABLE, 0) // backend not started, Wi-Fi down, CORS
   }
   // FastAPI sends {"detail": "..."}; a crash may send HTML, so never trust the body.
-  const data = await res.json().catch(() => ({}))
+  const data = await res.json().catch(() => null)
   if (!res.ok) {
     const fallback = res.status === 404 ? NOT_FOUND : `Something went wrong (${res.status}). Try again.`
-    throw apiError(typeof data.detail === 'string' ? data.detail : fallback, res.status)
+    throw apiError(typeof data?.detail === 'string' ? data.detail : fallback, res.status)
   }
+  // A 2xx that isn't JSON didn't come from our API (e.g. a dev server answering with index.html).
+  if (data === null) throw apiError(`Something went wrong (${res.status}). Try again.`, res.status)
   return data
 }
 

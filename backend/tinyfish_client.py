@@ -25,6 +25,7 @@ import asyncio
 import hashlib
 import json
 import time
+import uuid
 import weakref
 from collections.abc import Awaitable, Callable
 from dataclasses import asdict, dataclass, field
@@ -50,7 +51,7 @@ from tinyfish.agent.types import (
     StreamingUrlEvent,
 )
 
-from backend.config import settings
+from backend.config import settings, write_log
 from backend.models import AccessStatus
 
 AGENT_CONCURRENCY = 2  # TinyFish allows 2 concurrent Agent runs per account
@@ -170,14 +171,7 @@ def _account_error(exc: Exception) -> TinyFishAccountError | None:
 
 def _log(kind: str, payload: dict[str, Any]) -> None:
     """Write one JSON file per call to logs/<date>/. Keys are scrubbed even though the SDK sends them as headers."""
-    now = datetime.now()
-    folder = settings.logs_dir / now.strftime("%Y-%m-%d")
-    folder.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(payload, default=str, ensure_ascii=False, indent=1)
-    for secret in (settings.tinyfish_api_key, settings.gemini_api_key):
-        if secret:
-            text = text.replace(secret, "***")
-    (folder / f"{now.strftime('%H%M%S_%f')}-tinyfish-{kind}.json").write_text(text)
+    write_log(settings, f"tinyfish-{kind}", payload)
 
 
 def _cache_path(url: str, fmt: str):
@@ -188,17 +182,20 @@ def _cache_path(url: str, fmt: str):
 def _cache_put(page: FetchedPage, fmt: str) -> None:
     path = _cache_path(page.url, fmt)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(asdict(page), ensure_ascii=False))
+    # Write then rename: a crash, or two fetches of the same URL at once, never leaves half a file.
+    tmp = path.with_name(f"{path.stem}.{uuid.uuid4().hex}.tmp")
+    tmp.write_text(json.dumps(asdict(page), ensure_ascii=False))
+    tmp.replace(path)
 
 
 def _cache_get(url: str, fmt: str) -> FetchedPage | None:
-    path = _cache_path(url, fmt)
-    if not path.exists():
+    # Read only on the failure path, so an unreadable copy must count as "no copy", not crash the fetch.
+    try:
+        data = json.loads(_cache_path(url, fmt).read_text())
+        data.update(from_cache=True, error=None)
+        return FetchedPage(**data)
+    except (OSError, ValueError, TypeError):
         return None
-    data = json.loads(path.read_text())
-    data["from_cache"] = True
-    data["error"] = None
-    return FetchedPage(**data)
 
 
 # ---------------------------------------------------------------- Fetch + Search (free)
@@ -243,7 +240,7 @@ async def fetch_pages(
                 raise acct from exc
             _log("fetch", {"request": request, "exception": repr(exc), "seconds": time.monotonic() - started})
             for url in batch:
-                pages[url] = _fallback(url, fmt, f"Fetch failed: {exc}", fallback_to_cache)
+                pages[url] = _fallback(url, fmt, f"Fetch failed: {exc}", fallback_to_cache, redact)
             continue
 
         retrieved = _now()
@@ -269,14 +266,18 @@ async def fetch_pages(
         _log("fetch", {"request": request, "pages": [asdict(p) for p in cleaned],
                        "errors": [e.model_dump() for e in resp.errors], "seconds": time.monotonic() - started})
         for e in resp.errors:
-            pages[e.url] = _fallback(e.url, fmt, e.error, fallback_to_cache)
+            pages[e.url] = _fallback(e.url, fmt, e.error, fallback_to_cache, redact)
 
-    return [pages.get(u) or _fallback(u, fmt, "No result returned for this URL", fallback_to_cache) for u in urls]
+    return [pages.get(u) or _fallback(u, fmt, "No result returned for this URL", fallback_to_cache, redact)
+            for u in urls]
 
 
-def _fallback(url: str, fmt: str, error: str, use_cache: bool) -> FetchedPage:
+def _fallback(
+    url: str, fmt: str, error: str, use_cache: bool, redact: Callable[[FetchedPage], FetchedPage] | None = None
+) -> FetchedPage:
     if use_cache and (cached := _cache_get(url, fmt)):
-        return cached
+        # Redact the cached copy too: it may have been stored by a caller that didn't redact.
+        return redact(cached) if redact else cached
     return FetchedPage(url=url, retrieved_at=_now(), error=error)
 
 
@@ -361,8 +362,9 @@ async def run_agent(
                 raise acct from exc
             if isinstance(exc, RateLimitError):
                 out.error_code, out.error_message = "RATE_LIMIT_EXCEEDED", str(exc)
-            elif out.run_id and out.status not in TERMINAL:
-                # SSE has no reconnection: fall back to polling the run.
+            elif out.run_id and out.status not in TERMINAL and not isinstance(exc, TimeoutError):
+                # SSE has no reconnection: fall back to polling the run. Not after our own hard
+                # ceiling: its deadline has passed, so there is no time left to poll.
                 await _emit(on_event, AgentEvent("poll", "Stream dropped, checking the run directly…", out.run_id))
                 await _poll_run(client, out, deadline=started + max_seconds + 30)
             else:
@@ -471,8 +473,20 @@ def classify_access(
         return _from_text(reason_text) or ("blocked", reason_text or "Agent reported the page as blocked")
     if _has_data(result):
         return "accessible", None
-    # COMPLETED but empty: read the result for why.
-    return _from_text(json.dumps(result).lower()) or ("blocked", "Completed but returned no data")
+    # COMPLETED but empty: read the result's text values for why.
+    return _from_text(" ".join(_strings(result))) or ("blocked", "Completed but returned no data")
+
+
+def _strings(value: Any) -> list[str]:
+    """Every string value in a result, however nested. Key names are left out: the schema's
+    own "blocked" key would otherwise read as a block and trigger a paid stealth retry."""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        return [s for v in value.values() for s in _strings(v)]
+    if isinstance(value, list):
+        return [s for v in value for s in _strings(v)]
+    return []
 
 
 def _from_text(text: str) -> tuple[AccessStatus, str] | None:

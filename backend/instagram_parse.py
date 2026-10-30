@@ -25,7 +25,8 @@ OG_DESCRIPTION = re.compile(
     r'(?P<handle>[\w.]+) on (?P<date>[A-Z][a-z]+ \d{1,2}, \d{4}): "(?P<caption>.*)"\.?\s*$',
     re.S,
 )
-REEL_PATH = re.compile(r"/(?:[\w.]+/)?reels?/([A-Za-z0-9_-]{5,})")
+# Not /reels/audio/<id>/: every Reel page links its sound there, and it isn't a Reel.
+REEL_PATH = re.compile(r"/(?:[\w.]+/)?reels?/(?!audio/)([A-Za-z0-9_-]{5,})")
 HANDLE_RE = re.compile(r"^[A-Za-z0-9._]{1,30}$")
 # First path segments that are Instagram pages, not creator handles.
 RESERVED_PATHS = {
@@ -168,8 +169,8 @@ def normalise_topic(raw: str | None) -> str:
     digits-only, several hashtags at once, and anything over 40 characters.
     """
     text = (raw or "").strip()
-    if "instagram.com" in text:  # someone pasted a tag or topic page URL
-        m = re.search(r"/(?:explore/tags|popular)/([^/?#]+)", text)
+    if "instagram.com" in text.lower():  # someone pasted a tag or topic page URL (phones capitalise it)
+        m = re.search(r"/(?:explore/tags|popular)/([^/?#]+)", text, re.I)
         text = unquote(m.group(1)) if m else ""
     if len(re.findall(r"#\s*\w", text)) > 1:
         raise TopicRejected("Use one topic at a time, e.g. cooking.")
@@ -301,9 +302,9 @@ def parse_topic_page(final_url: str | None, links: list[str]) -> TopicPage:
             if h not in handles:
                 handles.append(h)
         elif "/popular/" in url and "topic_pill" in url:
-            slug = urlparse(url).path.strip("/").split("/")[-1]
+            slug = unquote(urlparse(url).path.strip("/").split("/")[-1])
             if slug and slug not in related:
-                related.append(unquote(slug))
+                related.append(slug)
     return TopicPage(walled=walled, entries=entries, handles=handles, related_topics=related)
 
 
@@ -314,6 +315,9 @@ JAMMED_COUNTS = re.compile(r"^[\d.,]+[KMB]?[\d.,]+[KMB]?$")  # "1.3M4.9K": likes
 COMMENT_LINK = re.compile(r"/p/[^/]+/c/\d+")
 META_TAG = re.compile(r'<meta\b[^>]*\b(?:property|name)=["\'](?:og:[^"\']+|description)["\'][^>]*>', re.S)
 OG_IMAGE = re.compile(r'<meta\b[^>]*content=["\']([^"\']+)["\'][^>]*property=["\']og:image["\']', re.S)
+# The og:description content is single-quoted because the caption inside it is in double
+# quotes, so each quote style must run to its own closing quote.
+OG_DESCRIPTION_META = re.compile(r'content=(?:"([^"]*)"|\'([^\']*)\')[^>]*og:description', re.S)
 
 
 def redact_reel_page(page):
@@ -344,8 +348,9 @@ def redact_reel_page(page):
         if h is not None and h.lower() not in allowed:
             continue
         tag = re.search(r"/explore/tags/([^/?#]+)", u)
-        if tag and og and unquote(tag.group(1)).casefold() not in caption_tags:
-            continue  # a hashtag someone used in a comment
+        # A hashtag someone used in a comment. Without the caption we can't tell, so drop them all.
+        if tag and (og is None or unquote(tag.group(1)).casefold() not in caption_tags):
+            continue
         links.append(u)
     images = [u for u in page.image_links if "-15/" in u]
     return replace(page, text=text, links=links, image_links=images)
@@ -371,7 +376,12 @@ def _strip_comment_blocks(text: str) -> str:
         first_comment -= 1
     end = len(lines)
     nonblank = [i for i in range(first_comment, len(lines)) if lines[i].strip()]
+    # Every comment ends with "Reply", so the post's counts come after the last one. Without this,
+    # a comment that is just a number ("100") would pass for the counts line and end the cut early.
+    last_reply = max((i for i in nonblank if lines[i].strip() == "Reply"), default=-1)
     for n, i in enumerate(nonblank):
+        if i < last_reply:
+            continue
         ln = lines[i].strip()
         nxt = lines[nonblank[n + 1]].strip() if n + 1 < len(nonblank) else ""
         if JAMMED_COUNTS.match(ln) or (ln == "Like" and COUNT_LINE.match(nxt)) or ln.startswith("Log in to like"):
@@ -401,8 +411,8 @@ def parse_reel_page(page) -> ReelPage:
     out = ReelPage()
     og = parse_og_description(page.description)
     if og is None and page.text:
-        m = re.search(r'content=["\']([^"\']*comments? - [^"\']*)["\'][^>]*og:description', page.text, re.S)
-        og = parse_og_description(m.group(1)) if m else None
+        m = OG_DESCRIPTION_META.search(page.text)
+        og = parse_og_description(html.unescape(m.group(1) if m.group(1) is not None else m.group(2))) if m else None
     if og:
         out.handle, out.likes, out.comments, out.posted_date = og.handle, og.likes, og.comments, og.posted_date
         out.caption, out.hook_line = og.caption, hook_line(og.caption)

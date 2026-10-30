@@ -75,10 +75,12 @@ def pick_outliers(
     eligible = sorted((c for c in candidates if c.outlier_ratio >= min_ratio), key=lambda c: -c.outlier_ratio)
     per_creator: Counter[str] = Counter()
     picked: list[Candidate] = []
+    picked_urls: set[str] = set()  # a collab Reel shows on both creators' grids: count it once
     for c in eligible:
-        if per_creator[c.handle] >= max_per_creator:
+        if per_creator[c.handle] >= max_per_creator or c.reel_url in picked_urls:
             continue
         picked.append(c)
+        picked_urls.add(c.reel_url)
         per_creator[c.handle] += 1
         if len(picked) == top_n:
             break

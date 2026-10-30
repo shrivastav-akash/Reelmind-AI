@@ -28,3 +28,6 @@ frontend/dist/
 
 # Claude Code personal settings (launch.json is shared)
 .claude/settings.local.json
+
+# graphify knowledge graph (local tool output)
+graphify-out/

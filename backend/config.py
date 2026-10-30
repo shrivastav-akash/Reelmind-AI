@@ -5,8 +5,10 @@ place. Keys are excluded from repr() so printing or logging `settings` can
 never leak them.
 """
 
+import json
 import os
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -42,3 +44,19 @@ def _load() -> Settings:
 
 
 settings = _load()
+
+
+def write_log(cfg: Settings, name: str, payload: dict) -> None:
+    """One JSON file per external call in logs/<date>/, with both API keys replaced by ***.
+
+    Used by tinyfish_client and llm_client. They pass their own module's `settings`, so
+    the tests' `isolated` fixture (which swaps those) still keeps logs in a temp folder.
+    """
+    now = datetime.now()
+    folder = cfg.logs_dir / now.strftime("%Y-%m-%d")
+    folder.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(payload, default=str, ensure_ascii=False, indent=1)
+    for secret in (cfg.tinyfish_api_key, cfg.gemini_api_key):
+        if secret:
+            text = text.replace(secret, "***")
+    (folder / f"{now.strftime('%H%M%S_%f')}-{name}.json").write_text(text)

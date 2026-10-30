@@ -3,8 +3,8 @@
 Called by vision.py and recommend.py (Fri). One function, generate_json():
 send a prompt (plus optional labelled images) and get back an instance of a
 pydantic model.
-- Model from LLM_MODEL; on a rate limit or server error, one retry on
-  LLM_FALLBACK_MODEL. A rejected key is not retried (it can't succeed).
+- Model from LLM_MODEL; on a rate limit, server error or network error, one
+  retry on LLM_FALLBACK_MODEL. A rejected key is not retried (it can't succeed).
 - JSON is enforced twice: Gemini's response_schema, then pydantic here.
 - Every call is logged to logs/ (prompt, model, seconds, raw answer); images
   are logged as sizes only, keys are scrubbed.
@@ -12,16 +12,15 @@ pydantic model.
 
 from __future__ import annotations
 
-import json
 import time
-from datetime import datetime
 from typing import TypeVar
 
+import httpx
 from google import genai
 from google.genai import errors, types
 from pydantic import BaseModel, ValidationError
 
-from backend.config import settings
+from backend.config import settings, write_log
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -31,14 +30,7 @@ class LLMError(Exception):
 
 
 def _log(payload: dict) -> None:
-    now = datetime.now()
-    folder = settings.logs_dir / now.strftime("%Y-%m-%d")
-    folder.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(payload, default=str, ensure_ascii=False, indent=1)
-    for secret in (settings.tinyfish_api_key, settings.gemini_api_key):
-        if secret:
-            text = text.replace(secret, "***")
-    (folder / f"{now.strftime('%H%M%S_%f')}-gemini.json").write_text(text)
+    write_log(settings, "gemini", payload)
 
 
 def _contents(prompt: str, images: list[tuple[str, bytes]]) -> list:
@@ -81,6 +73,13 @@ async def generate_json(
                 last_error = f"{model}: {exc.code}"
                 continue  # try the fallback model
             raise LLMError(f"Gemini error {exc.code}: {exc}") from exc
+        except httpx.HTTPError as exc:
+            # Wi-Fi drop or timeout: the SDK raises httpx's own errors, not APIError. Treat it like
+            # a 5xx so callers still get an LLMError they can fall back on.
+            log.update(error=f"network: {exc!r}", seconds=round(time.monotonic() - started, 2))
+            _log(log)
+            last_error = f"{model}: network error"
+            continue
 
         log.update(seconds=round(time.monotonic() - started, 2), answer=resp.text)
         _log(log)
