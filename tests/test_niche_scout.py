@@ -19,9 +19,6 @@ from backend.tinyfish_client import AgentEvent, AgentOutcome, FetchedPage, TinyF
 
 from .conftest import SAMPLES
 
-# Built on Friday: run with `pytest -m friday`. Delete this line once the file passes.
-pytestmark = pytest.mark.friday
-
 IG = SAMPLES / "instagram"
 NOW = datetime.now(timezone.utc).isoformat(timespec="seconds")
 TOPIC = FetchedPage(**json.loads((IG / "topic_cooking.json").read_text()))

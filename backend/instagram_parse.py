@@ -215,6 +215,10 @@ class GridPage:
     followers: int | None
     tiles: list[GridTile]
     problems: list[str] = field(default_factory=list)  # why some numbers are missing, in plain words
+    # Whether the page could be read at all. parse_grid only sees text, so niche_scout sets these
+    # from the fetch result (failed fetch, login wall, private account).
+    access_status: str = "accessible"
+    status_reason: str | None = None
 
 
 def parse_grid(text: str | None, links: list[str], description: str | None = None, handle: str | None = None) -> GridPage:
