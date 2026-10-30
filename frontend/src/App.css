@@ -1,0 +1,390 @@
+/* Layout and components. Readable from 5-10 m: 18 px base, 26 px headings, high contrast,
+   every status as a word on a tinted badge (never colour alone). */
+
+.page {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+.replay-banner {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 -24px;
+  padding: 12px 24px;
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-bottom: 2px solid #e2b04a;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- header + form */
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 40px;
+  padding: 24px 0 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.top h1 {
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  flex: 1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-weight: 650;
+}
+
+.field input[type='text'] {
+  font: inherit;
+  width: 14em;
+  padding: 8px 12px;
+  border: 1px solid #a9b8b5;
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.field input[type='file'] {
+  font: inherit;
+  font-size: 16px;
+  max-width: 22em;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+button.primary {
+  padding: 10px 26px;
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+button.primary:disabled {
+  background: #9fb5b1;
+  cursor: not-allowed;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0 0;
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: var(--bad-bg);
+  color: var(--bad);
+  font-weight: 600;
+}
+
+.alert button {
+  padding: 6px 16px;
+  border: 1px solid var(--bad);
+  background: #fff;
+  color: var(--bad);
+  font-weight: 700;
+}
+
+.intro {
+  max-width: 50em;
+  margin: 28px 0;
+  color: var(--muted);
+  font-size: 20px;
+}
+
+/* ---------------------------------------------------------------- the three panels */
+
+.panels {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr) minmax(0, 1.1fr);
+  gap: 20px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel h2 {
+  font-size: 26px;
+}
+
+.panel h3 {
+  margin-top: 8px;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.by {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.panel p {
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 15px;
+}
+
+.big {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.quote {
+  font-style: italic;
+}
+
+.facts,
+.experiment {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.facts dt,
+.experiment dt {
+  font-size: 14px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.facts dd,
+.experiment dd {
+  margin: 2px 0 0;
+}
+
+/* ---------------------------------------------------------------- Niche Scout */
+
+.live {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.live a {
+  font-weight: 700;
+}
+
+.live iframe {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--grey-bg);
+}
+
+.log {
+  list-style: none;
+  margin: 0;
+  padding: 10px 12px;
+  max-height: calc(8 * 1.6em);
+  overflow-y: auto;
+  background: var(--paper);
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.log li {
+  display: flex;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.log .t {
+  flex: none;
+  width: 2.6em;
+  color: var(--muted);
+  text-align: right;
+}
+
+.log .log-error {
+  color: var(--bad);
+}
+
+.log .log-outlier,
+.log .log-creator {
+  font-weight: 650;
+}
+
+.creators {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.creator {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.creator-head,
+.example-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.creator-head a {
+  font-weight: 700;
+}
+
+.status {
+  padding: 1px 10px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.status-accessible {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.status-login_wall {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.status-blocked {
+  background: var(--bad-bg);
+  color: var(--bad);
+}
+
+.status-not_found,
+.status-timeout,
+.status-pending {
+  background: var(--grey-bg);
+  color: var(--grey);
+}
+
+.status-line {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- examples + card */
+
+.examples {
+  display: grid;
+  gap: 10px;
+}
+
+.example {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-soft);
+}
+
+.example.not-citable {
+  border-left-color: #9aa5a3;
+  background: var(--grey-bg);
+}
+
+.example-head strong {
+  font-size: 22px;
+}
+
+.tag {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.missing {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.receipt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.recommendation {
+  border: 2px solid var(--accent);
+}
+
+.suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggestion + .suggestion {
+  margin-top: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}

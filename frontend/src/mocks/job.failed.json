@@ -1,0 +1,84 @@
+{
+  "id": "mockfail0001",
+  "status": "failed",
+  "created_at": "2026-10-30T15:02:11+05:30",
+  "topic": "cooking",
+  "replay": false,
+  "replay_recorded_at": null,
+  "stages": {
+    "video": {
+      "status": "done",
+      "reason": null
+    },
+    "scout": {
+      "status": "failed",
+      "reason": "TinyFish wallet can't cover this (402). Top up or switch to the spare key."
+    },
+    "recommend": {
+      "status": "skipped",
+      "reason": "No research results to compare against"
+    }
+  },
+  "events": [
+    {
+      "t": 0.1,
+      "source": "system",
+      "kind": "info",
+      "message": "MOCK DATA for building the UI. Not a real run.",
+      "data": null
+    },
+    {
+      "t": 0.4,
+      "source": "scout",
+      "kind": "progress",
+      "message": "Opening the #cooking topic page",
+      "data": {
+        "url": "https://www.instagram.com/explore/tags/cooking/"
+      }
+    },
+    {
+      "t": 1.9,
+      "source": "scout",
+      "kind": "error",
+      "message": "TinyFish wallet can't cover this (402). Top up or switch to the spare key.",
+      "data": null
+    },
+    {
+      "t": 6.0,
+      "source": "video",
+      "kind": "progress",
+      "message": "Found 7 cuts, 1 in the first 3 s",
+      "data": null
+    }
+  ],
+  "live_view_url": null,
+  "video": {
+    "duration_s": 30.1,
+    "cut_times_s": [
+      1.8,
+      6.2,
+      9.9,
+      14.0,
+      18.5,
+      22.7,
+      26.4
+    ],
+    "cuts_first_3s": 1,
+    "avg_shot_length_s": 3.76,
+    "transcript": "Today I'm making a two minute dahi curry. First whisk the curd, then temper the spices, simmer for two minutes, and here it is.",
+    "first_word_at_s": 0.4,
+    "words_first_3s": "Today I'm making a two minute dahi curry",
+    "text_overlay_first_3s": null,
+    "opening_description": null,
+    "payoff_at_s": null,
+    "payoff_reason": null,
+    "null_reasons": {
+      "payoff_at_s": "Vision step didn't run",
+      "text_overlay_first_3s": "Vision step didn't run"
+    }
+  },
+  "creators": [],
+  "examples": [],
+  "recommendation": null,
+  "error": "TinyFish key or credits problem: the wallet can't cover this run. Switch to the spare key or use replay mode."
+}

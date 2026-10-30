@@ -1,0 +1,41 @@
+{
+ "topic": "cooking",
+ "note": "Picked 29 Oct 2026: smaller creators whose /reels/ grids load logged out via TinyFish Fetch. Used only if the topic page and the Agent both fail (picked_by=saved_list). Re-check with scripts/spike_fetch.py --recheck.",
+ "creators": [
+  {
+   "handle": "_kiran_ki_rasoi_",
+   "followers": 9067,
+   "median_views": 3084,
+   "best_ratio": 9.21,
+   "checked_at": "2026-10-29T11:48:23+00:00"
+  },
+  {
+   "handle": "pov__gil",
+   "followers": 23000,
+   "median_views": 5595,
+   "best_ratio": 4.72,
+   "checked_at": "2026-10-29T11:46:25+00:00"
+  },
+  {
+   "handle": "eylems_kitchen",
+   "followers": 99000,
+   "median_views": 74800,
+   "best_ratio": 5.92,
+   "checked_at": "2026-10-29T11:46:25+00:00"
+  },
+  {
+   "handle": "baiba.tropina",
+   "followers": 143000,
+   "median_views": 24500,
+   "best_ratio": 38.94,
+   "checked_at": "2026-10-29T11:48:23+00:00"
+  },
+  {
+   "handle": "hkncook",
+   "followers": 175000,
+   "median_views": 148000,
+   "best_ratio": 8.11,
+   "checked_at": "2026-10-29T11:46:25+00:00"
+  }
+ ]
+}
