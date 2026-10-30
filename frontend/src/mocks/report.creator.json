@@ -1,0 +1,847 @@
+{
+  "id": "mockcreator1",
+  "kind": "creator",
+  "status": "done",
+  "created_at": "2026-10-30T06:00:00Z",
+  "input": {
+    "handle_or_url": "mock_kitchen_a"
+  },
+  "owner_id": null,
+  "replay": false,
+  "replay_recorded_at": null,
+  "stages": {
+    "fetch": {
+      "status": "done",
+      "reason": null
+    },
+    "analyse": {
+      "status": "done",
+      "reason": null
+    },
+    "visuals": {
+      "status": "done",
+      "reason": null
+    },
+    "insights": {
+      "status": "done",
+      "reason": null
+    }
+  },
+  "events": [
+    {
+      "t": 0.0,
+      "source": "system",
+      "kind": "info",
+      "message": "MOCK DATA for building the UI. Not a real run.",
+      "data": null
+    },
+    {
+      "t": 2.1,
+      "source": "scout",
+      "kind": "progress",
+      "message": "Reading @mock_kitchen_a's Reels grid",
+      "data": null
+    },
+    {
+      "t": 9.4,
+      "source": "scout",
+      "kind": "progress",
+      "message": "12 Reels read (1 pinned Reel skipped)",
+      "data": null
+    },
+    {
+      "t": 21.0,
+      "source": "scout",
+      "kind": "progress",
+      "message": "Read 12 Reel pages: captions, dates, audio",
+      "data": null
+    },
+    {
+      "t": 22.3,
+      "source": "system",
+      "kind": "progress",
+      "message": "4 Reels in the last 7 days; median views 13K",
+      "data": null
+    },
+    {
+      "t": 34.8,
+      "source": "llm",
+      "kind": "progress",
+      "message": "Described 6 covers",
+      "data": null
+    },
+    {
+      "t": 51.2,
+      "source": "llm",
+      "kind": "info",
+      "message": "4 insights passed every check",
+      "data": null
+    }
+  ],
+  "result": {
+    "kind": "creator",
+    "profile": {
+      "handle": "mock_kitchen_a",
+      "profile_url": "https://www.instagram.com/mock_kitchen_a/",
+      "followers": 48300,
+      "following": 512,
+      "posts": 386,
+      "reels_read": 12,
+      "pinned_skipped": 1,
+      "median_views": 12750,
+      "reels_in_window": 4,
+      "posts_per_week": 3.5,
+      "median_engagement": 0.065,
+      "window_days": 7,
+      "window_note": null,
+      "access_status": "accessible",
+      "status_reason": null
+    },
+    "reels": [
+      {
+        "id": "r1",
+        "source_url": "https://www.instagram.com/reel/MOCK0000001/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-29",
+        "in_window": true,
+        "views": 48200,
+        "likes": 3100,
+        "comments": 88,
+        "ratio_vs_median": 3.78,
+        "caption": "3 chutneys you can make in 5 minutes 🌿\nSave this for later!\n#chutney #indianfood #quickrecipes",
+        "hook_line": "3 chutneys you can make in 5 minutes 🌿",
+        "hook_type": "number_list",
+        "hashtags": [
+          "#chutney",
+          "#indianfood",
+          "#quickrecipes"
+        ],
+        "keywords": [
+          "chutneys",
+          "make",
+          "minutes"
+        ],
+        "caption_chars": 94,
+        "has_cta": true,
+        "audio_label": "Original audio",
+        "original_audio": true,
+        "cover_url": "https://picsum.photos/seed/mock1/360/640",
+        "cover_notes": {
+          "text_on_cover": "3 CHUTNEYS IN 5 MIN",
+          "face": false,
+          "setting": "kitchen counter, top-down",
+          "style": "bright, close-up"
+        },
+        "null_reasons": {}
+      },
+      {
+        "id": "r2",
+        "source_url": "https://www.instagram.com/reel/MOCK0000002/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-27",
+        "in_window": true,
+        "views": 9100,
+        "likes": 610,
+        "comments": 21,
+        "ratio_vs_median": 0.71,
+        "caption": "Aaj kuch naya try karte hain\n#dinner #homecooking",
+        "hook_line": "Aaj kuch naya try karte hain",
+        "hook_type": "statement",
+        "hashtags": [
+          "#dinner",
+          "#homecooking"
+        ],
+        "keywords": [
+          "kuch",
+          "naya",
+          "karte",
+          "hain"
+        ],
+        "caption_chars": 49,
+        "has_cta": false,
+        "audio_label": "Mock Artist · Mock Song",
+        "original_audio": false,
+        "cover_url": "https://picsum.photos/seed/mock2/360/640",
+        "cover_notes": {
+          "text_on_cover": null,
+          "face": true,
+          "setting": "kitchen, wide shot",
+          "style": "dim, talking head"
+        },
+        "null_reasons": {}
+      },
+      {
+        "id": "r3",
+        "source_url": "https://www.instagram.com/reel/MOCK0000003/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-25",
+        "in_window": true,
+        "views": 61500,
+        "likes": 4400,
+        "comments": 132,
+        "ratio_vs_median": 4.82,
+        "caption": "Why does restaurant dal taste better? 🤔\nThe secret is the tadka. Save this!\n#dal #indianfood #cookingtips",
+        "hook_line": "Why does restaurant dal taste better? 🤔",
+        "hook_type": "question",
+        "hashtags": [
+          "#dal",
+          "#indianfood",
+          "#cookingtips"
+        ],
+        "keywords": [
+          "does",
+          "restaurant",
+          "taste",
+          "better"
+        ],
+        "caption_chars": 105,
+        "has_cta": true,
+        "audio_label": "Original audio",
+        "original_audio": true,
+        "cover_url": "https://picsum.photos/seed/mock3/360/640",
+        "cover_notes": {
+          "text_on_cover": "RESTAURANT DAL SECRET?",
+          "face": true,
+          "setting": "stove close-up",
+          "style": "bright, steam visible"
+        },
+        "null_reasons": {}
+      },
+      {
+        "id": "r4",
+        "source_url": "https://www.instagram.com/reel/MOCK0000004/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-24",
+        "in_window": true,
+        "views": 12300,
+        "likes": 700,
+        "comments": 19,
+        "ratio_vs_median": 0.96,
+        "caption": "My mom's Sunday rajma\n#rajma #homecooking",
+        "hook_line": "My mom's Sunday rajma",
+        "hook_type": "story",
+        "hashtags": [
+          "#rajma",
+          "#homecooking"
+        ],
+        "keywords": [
+          "mom's",
+          "sunday",
+          "rajma"
+        ],
+        "caption_chars": 41,
+        "has_cta": false,
+        "audio_label": "Mock Artist · Slow Song",
+        "original_audio": false,
+        "cover_url": "https://picsum.photos/seed/mock4/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      },
+      {
+        "id": "r5",
+        "source_url": "https://www.instagram.com/reel/MOCK0000005/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-21",
+        "in_window": false,
+        "views": 15800,
+        "likes": 980,
+        "comments": 30,
+        "ratio_vs_median": 1.24,
+        "caption": "How to make soft rotis every time\nComment ROTI for the full recipe\n#roti #cookingtips #indianfood",
+        "hook_line": "How to make soft rotis every time",
+        "hook_type": "how_to",
+        "hashtags": [
+          "#roti",
+          "#cookingtips",
+          "#indianfood"
+        ],
+        "keywords": [
+          "make",
+          "soft",
+          "rotis",
+          "every"
+        ],
+        "caption_chars": 97,
+        "has_cta": true,
+        "audio_label": "Original audio",
+        "original_audio": true,
+        "cover_url": "https://picsum.photos/seed/mock5/360/640",
+        "cover_notes": {
+          "text_on_cover": "SOFT ROTIS",
+          "face": false,
+          "setting": "hands on dough",
+          "style": "warm, close-up"
+        },
+        "null_reasons": {}
+      },
+      {
+        "id": "r6",
+        "source_url": "https://www.instagram.com/reel/MOCK0000006/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-19",
+        "in_window": false,
+        "views": 7400,
+        "likes": 400,
+        "comments": 9,
+        "ratio_vs_median": 0.58,
+        "caption": "Lunch box idea for Monday\n#lunchbox #homecooking",
+        "hook_line": "Lunch box idea for Monday",
+        "hook_type": "statement",
+        "hashtags": [
+          "#lunchbox",
+          "#homecooking"
+        ],
+        "keywords": [
+          "lunch",
+          "idea",
+          "monday"
+        ],
+        "caption_chars": 48,
+        "has_cta": false,
+        "audio_label": "Mock Artist · Mock Song",
+        "original_audio": false,
+        "cover_url": "https://picsum.photos/seed/mock6/360/640",
+        "cover_notes": {
+          "text_on_cover": null,
+          "face": false,
+          "setting": "tiffin box on table",
+          "style": "flat, wide"
+        },
+        "null_reasons": {}
+      },
+      {
+        "id": "r7",
+        "source_url": "https://www.instagram.com/reel/MOCK0000007/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-17",
+        "in_window": false,
+        "views": 52000,
+        "likes": 3900,
+        "comments": 140,
+        "ratio_vs_median": 4.08,
+        "caption": "Is ghee actually healthy? Let's test it\n#ghee #cookingtips #indianfood",
+        "hook_line": "Is ghee actually healthy? Let's test it",
+        "hook_type": "question",
+        "hashtags": [
+          "#ghee",
+          "#cookingtips",
+          "#indianfood"
+        ],
+        "keywords": [
+          "ghee",
+          "actually",
+          "healthy",
+          "let's"
+        ],
+        "caption_chars": 70,
+        "has_cta": false,
+        "audio_label": "Original audio",
+        "original_audio": true,
+        "cover_url": "https://picsum.photos/seed/mock7/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      },
+      {
+        "id": "r8",
+        "source_url": "https://www.instagram.com/reel/MOCK0000008/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-15",
+        "in_window": false,
+        "views": 11000,
+        "likes": 690,
+        "comments": 25,
+        "ratio_vs_median": 0.86,
+        "caption": "POV: you forgot to soak the chana\n#chana #homecooking",
+        "hook_line": "POV: you forgot to soak the chana",
+        "hook_type": "pov",
+        "hashtags": [
+          "#chana",
+          "#homecooking"
+        ],
+        "keywords": [
+          "pov:",
+          "forgot",
+          "soak",
+          "chana"
+        ],
+        "caption_chars": 53,
+        "has_cta": false,
+        "audio_label": "Mock Artist · Funny Clip",
+        "original_audio": false,
+        "cover_url": "https://picsum.photos/seed/mock8/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      },
+      {
+        "id": "r9",
+        "source_url": "https://www.instagram.com/reel/MOCK0000009/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-13",
+        "in_window": false,
+        "views": 9800,
+        "likes": 520,
+        "comments": 12,
+        "ratio_vs_median": 0.77,
+        "caption": "Simple dinner tonight\n#dinner",
+        "hook_line": "Simple dinner tonight",
+        "hook_type": "statement",
+        "hashtags": [
+          "#dinner"
+        ],
+        "keywords": [
+          "simple",
+          "dinner",
+          "tonight"
+        ],
+        "caption_chars": 29,
+        "has_cta": false,
+        "audio_label": "Mock Artist · Mock Song",
+        "original_audio": false,
+        "cover_url": "https://picsum.photos/seed/mock9/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      },
+      {
+        "id": "r10",
+        "source_url": "https://www.instagram.com/reel/MOCK0000010/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-11",
+        "in_window": false,
+        "views": 14100,
+        "likes": 900,
+        "comments": 41,
+        "ratio_vs_median": 1.11,
+        "caption": "Stop adding salt before this step\n#cookingtips",
+        "hook_line": "Stop adding salt before this step",
+        "hook_type": "warning",
+        "hashtags": [
+          "#cookingtips"
+        ],
+        "keywords": [
+          "stop",
+          "adding",
+          "salt",
+          "before"
+        ],
+        "caption_chars": 46,
+        "has_cta": false,
+        "audio_label": "Original audio",
+        "original_audio": true,
+        "cover_url": "https://picsum.photos/seed/mock10/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      },
+      {
+        "id": "r11",
+        "source_url": "https://www.instagram.com/reel/MOCK0000011/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-09",
+        "in_window": false,
+        "views": 8600,
+        "likes": 470,
+        "comments": 8,
+        "ratio_vs_median": 0.67,
+        "caption": "Weekend thali\n#thali #homecooking",
+        "hook_line": "Weekend thali",
+        "hook_type": "statement",
+        "hashtags": [
+          "#thali",
+          "#homecooking"
+        ],
+        "keywords": [
+          "weekend",
+          "thali"
+        ],
+        "caption_chars": 33,
+        "has_cta": false,
+        "audio_label": "Mock Artist · Slow Song",
+        "original_audio": false,
+        "cover_url": "https://picsum.photos/seed/mock11/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      },
+      {
+        "id": "r12",
+        "source_url": "https://www.instagram.com/reel/MOCK0000012/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": null,
+        "pinned": false,
+        "posted_date": "2026-10-07",
+        "in_window": false,
+        "views": 13200,
+        "likes": 820,
+        "comments": 27,
+        "ratio_vs_median": 1.04,
+        "caption": "How to temper spices the right way\n#cookingtips #indianfood",
+        "hook_line": "How to temper spices the right way",
+        "hook_type": "how_to",
+        "hashtags": [
+          "#cookingtips",
+          "#indianfood"
+        ],
+        "keywords": [
+          "temper",
+          "spices",
+          "right"
+        ],
+        "caption_chars": 59,
+        "has_cta": false,
+        "audio_label": "Original audio",
+        "original_audio": true,
+        "cover_url": "https://picsum.photos/seed/mock12/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      }
+    ],
+    "patterns": [
+      {
+        "dimension": "audio",
+        "value": "original",
+        "reel_ids": [
+          "r1",
+          "r3",
+          "r5",
+          "r7",
+          "r10",
+          "r12"
+        ],
+        "median_ratio": 2.51,
+        "in_top": 4,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "audio",
+        "value": "named track",
+        "reel_ids": [
+          "r2",
+          "r4",
+          "r6",
+          "r8",
+          "r9",
+          "r11"
+        ],
+        "median_ratio": 0.74,
+        "in_top": 0,
+        "in_bottom": 4
+      },
+      {
+        "dimension": "caption_length",
+        "value": "longer (60+)",
+        "reel_ids": [
+          "r1",
+          "r3",
+          "r5",
+          "r7"
+        ],
+        "median_ratio": 3.93,
+        "in_top": 4,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "caption_length",
+        "value": "short (< 60)",
+        "reel_ids": [
+          "r2",
+          "r4",
+          "r6",
+          "r8",
+          "r9",
+          "r10",
+          "r11",
+          "r12"
+        ],
+        "median_ratio": 0.81,
+        "in_top": 0,
+        "in_bottom": 4
+      },
+      {
+        "dimension": "hashtag",
+        "value": "#indianfood",
+        "reel_ids": [
+          "r1",
+          "r3",
+          "r5",
+          "r7",
+          "r12"
+        ],
+        "median_ratio": 3.78,
+        "in_top": 4,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hashtag",
+        "value": "#cookingtips",
+        "reel_ids": [
+          "r3",
+          "r5",
+          "r7",
+          "r10",
+          "r12"
+        ],
+        "median_ratio": 1.24,
+        "in_top": 3,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hashtag",
+        "value": "#dinner",
+        "reel_ids": [
+          "r2",
+          "r9"
+        ],
+        "median_ratio": 0.74,
+        "in_top": 0,
+        "in_bottom": 2
+      },
+      {
+        "dimension": "hashtag",
+        "value": "#homecooking",
+        "reel_ids": [
+          "r2",
+          "r4",
+          "r6",
+          "r8",
+          "r11"
+        ],
+        "median_ratio": 0.71,
+        "in_top": 0,
+        "in_bottom": 3
+      },
+      {
+        "dimension": "hook_type",
+        "value": "question",
+        "reel_ids": [
+          "r3",
+          "r7"
+        ],
+        "median_ratio": 4.45,
+        "in_top": 2,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hook_type",
+        "value": "number_list",
+        "reel_ids": [
+          "r1"
+        ],
+        "median_ratio": 3.78,
+        "in_top": 1,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hook_type",
+        "value": "how_to",
+        "reel_ids": [
+          "r5",
+          "r12"
+        ],
+        "median_ratio": 1.14,
+        "in_top": 1,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hook_type",
+        "value": "warning",
+        "reel_ids": [
+          "r10"
+        ],
+        "median_ratio": 1.11,
+        "in_top": 0,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hook_type",
+        "value": "story",
+        "reel_ids": [
+          "r4"
+        ],
+        "median_ratio": 0.96,
+        "in_top": 0,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hook_type",
+        "value": "pov",
+        "reel_ids": [
+          "r8"
+        ],
+        "median_ratio": 0.86,
+        "in_top": 0,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hook_type",
+        "value": "statement",
+        "reel_ids": [
+          "r2",
+          "r6",
+          "r9",
+          "r11"
+        ],
+        "median_ratio": 0.69,
+        "in_top": 0,
+        "in_bottom": 4
+      },
+      {
+        "dimension": "weekday",
+        "value": "Sunday",
+        "reel_ids": [
+          "r3",
+          "r10"
+        ],
+        "median_ratio": 2.97,
+        "in_top": 1,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "weekday",
+        "value": "Saturday",
+        "reel_ids": [
+          "r4",
+          "r7"
+        ],
+        "median_ratio": 2.52,
+        "in_top": 1,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "weekday",
+        "value": "Thursday",
+        "reel_ids": [
+          "r1",
+          "r8"
+        ],
+        "median_ratio": 2.32,
+        "in_top": 1,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "weekday",
+        "value": "Wednesday",
+        "reel_ids": [
+          "r5",
+          "r12"
+        ],
+        "median_ratio": 1.14,
+        "in_top": 1,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "weekday",
+        "value": "Tuesday",
+        "reel_ids": [
+          "r2",
+          "r9"
+        ],
+        "median_ratio": 0.74,
+        "in_top": 0,
+        "in_bottom": 2
+      }
+    ],
+    "insights": [
+      {
+        "kind": "working",
+        "claim": "Question hooks are your strongest opener: both question Reels reached about 4x your median views.",
+        "keys": [
+          "pat.hook_type.question",
+          "p.median_views"
+        ],
+        "reel_ids": [
+          "r3",
+          "r7"
+        ]
+      },
+      {
+        "kind": "working",
+        "claim": "Original audio Reels sit well above your named-track Reels on views.",
+        "keys": [
+          "pat.audio.original",
+          "pat.audio.named track"
+        ],
+        "reel_ids": [
+          "r1",
+          "r3",
+          "r7"
+        ]
+      },
+      {
+        "kind": "not_working",
+        "claim": "Plain statement hooks (\"Simple dinner tonight\") all landed below your median.",
+        "keys": [
+          "pat.hook_type.statement"
+        ],
+        "reel_ids": [
+          "r2",
+          "r6",
+          "r9",
+          "r11"
+        ]
+      },
+      {
+        "kind": "try_next",
+        "claim": "Test a question hook with a text cover on your next recipe, e.g. a myth-check like the ghee Reel.",
+        "keys": [
+          "pat.hook_type.question",
+          "pat.hashtag.#cookingtips"
+        ],
+        "reel_ids": [
+          "r7"
+        ]
+      }
+    ],
+    "insights_source": "llm",
+    "null_reasons": {
+      "video_length": "Video length isn't on public Reel pages",
+      "spoken_hook": "Spoken words need the video file, which public pages don't include"
+    }
+  },
+  "error": null
+}

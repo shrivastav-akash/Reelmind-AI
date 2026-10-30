@@ -1,0 +1,426 @@
+{
+  "id": "mockniche001",
+  "kind": "niche",
+  "status": "done",
+  "created_at": "2026-10-30T06:00:00Z",
+  "input": {
+    "keywords": [
+      "cooking",
+      "dal"
+    ]
+  },
+  "owner_id": null,
+  "replay": false,
+  "replay_recorded_at": null,
+  "stages": {
+    "research": {
+      "status": "done",
+      "reason": null
+    },
+    "patterns": {
+      "status": "done",
+      "reason": null
+    },
+    "insights": {
+      "status": "done",
+      "reason": null
+    }
+  },
+  "events": [
+    {
+      "t": 0.0,
+      "source": "system",
+      "kind": "info",
+      "message": "MOCK DATA for building the UI. Not a real run.",
+      "data": null
+    },
+    {
+      "t": 4.0,
+      "source": "scout",
+      "kind": "progress",
+      "message": "Reading #cooking and #dal",
+      "data": null
+    },
+    {
+      "t": 66.0,
+      "source": "scout",
+      "kind": "progress",
+      "message": "5 outliers from 8 creators",
+      "data": null
+    },
+    {
+      "t": 70.2,
+      "source": "scout",
+      "kind": "progress",
+      "message": "2 web results",
+      "data": null
+    },
+    {
+      "t": 88.0,
+      "source": "llm",
+      "kind": "info",
+      "message": "2 insights passed every check",
+      "data": null
+    }
+  ],
+  "result": {
+    "kind": "niche",
+    "keywords": [
+      "cooking",
+      "dal"
+    ],
+    "run_date": "2026-10-30",
+    "creators_read": 8,
+    "reels": [
+      {
+        "id": "r1",
+        "source_url": "https://www.instagram.com/reel/MOCKP0000001/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": "mock_kitchen_b",
+        "pinned": false,
+        "posted_date": "2026-10-29",
+        "in_window": true,
+        "views": 210000,
+        "likes": 15000,
+        "comments": 410,
+        "ratio_vs_median": 5.6,
+        "caption": "Is this the easiest dal ever? 🤔\n#dal #indianfood #easyrecipes",
+        "hook_line": "Is this the easiest dal ever? 🤔",
+        "hook_type": "question",
+        "hashtags": [
+          "#dal",
+          "#indianfood",
+          "#easyrecipes"
+        ],
+        "keywords": [
+          "this",
+          "easiest",
+          "ever"
+        ],
+        "caption_chars": 61,
+        "has_cta": false,
+        "audio_label": "Original audio",
+        "original_audio": true,
+        "cover_url": "https://picsum.photos/seed/mockp1/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      },
+      {
+        "id": "r2",
+        "source_url": "https://www.instagram.com/reel/MOCKP0000002/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": "mock_kitchen_c",
+        "pinned": false,
+        "posted_date": "2026-10-28",
+        "in_window": true,
+        "views": 96000,
+        "likes": 6100,
+        "comments": 150,
+        "ratio_vs_median": 3.9,
+        "caption": "3 monsoon snacks under 10 minutes\n#monsoonrecipes #snacks #indianfood",
+        "hook_line": "3 monsoon snacks under 10 minutes",
+        "hook_type": "number_list",
+        "hashtags": [
+          "#monsoonrecipes",
+          "#snacks",
+          "#indianfood"
+        ],
+        "keywords": [
+          "monsoon",
+          "snacks",
+          "under",
+          "minutes"
+        ],
+        "caption_chars": 69,
+        "has_cta": false,
+        "audio_label": "Original audio",
+        "original_audio": true,
+        "cover_url": "https://picsum.photos/seed/mockp2/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      },
+      {
+        "id": "r3",
+        "source_url": "https://www.instagram.com/reel/MOCKP0000003/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": "mock_kitchen_b",
+        "pinned": false,
+        "posted_date": "2026-10-29",
+        "in_window": true,
+        "views": 88000,
+        "likes": 5200,
+        "comments": 98,
+        "ratio_vs_median": 2.4,
+        "caption": "Why your dal tastes flat\n#dal #cookingtips",
+        "hook_line": "Why your dal tastes flat",
+        "hook_type": "question",
+        "hashtags": [
+          "#dal",
+          "#cookingtips"
+        ],
+        "keywords": [
+          "your",
+          "tastes",
+          "flat"
+        ],
+        "caption_chars": 42,
+        "has_cta": false,
+        "audio_label": "Mock Artist · Mock Song",
+        "original_audio": false,
+        "cover_url": "https://picsum.photos/seed/mockp3/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      },
+      {
+        "id": "r4",
+        "source_url": "https://www.instagram.com/reel/MOCKP0000004/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": "mock_kitchen_d",
+        "pinned": false,
+        "posted_date": "2026-10-26",
+        "in_window": true,
+        "views": 54000,
+        "likes": 3000,
+        "comments": 61,
+        "ratio_vs_median": 3.1,
+        "caption": "POV: mom tastes your dal\n#dal #homecooking",
+        "hook_line": "POV: mom tastes your dal",
+        "hook_type": "pov",
+        "hashtags": [
+          "#dal",
+          "#homecooking"
+        ],
+        "keywords": [
+          "pov:",
+          "tastes",
+          "your"
+        ],
+        "caption_chars": 42,
+        "has_cta": false,
+        "audio_label": "Mock Artist · Funny Clip",
+        "original_audio": false,
+        "cover_url": "https://picsum.photos/seed/mockp4/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      },
+      {
+        "id": "r5",
+        "source_url": "https://www.instagram.com/reel/MOCKP0000005/",
+        "retrieved_at": "2026-10-30T06:00:00Z",
+        "access_status": "accessible",
+        "handle": "mock_kitchen_e",
+        "pinned": false,
+        "posted_date": "2026-10-27",
+        "in_window": true,
+        "views": 47000,
+        "likes": 2600,
+        "comments": 44,
+        "ratio_vs_median": 2.2,
+        "caption": "Monsoon pakoda in 5 steps\n#monsoonrecipes #pakoda",
+        "hook_line": "Monsoon pakoda in 5 steps",
+        "hook_type": "number_list",
+        "hashtags": [
+          "#monsoonrecipes",
+          "#pakoda"
+        ],
+        "keywords": [
+          "monsoon",
+          "pakoda",
+          "steps"
+        ],
+        "caption_chars": 49,
+        "has_cta": false,
+        "audio_label": "Original audio",
+        "original_audio": true,
+        "cover_url": "https://picsum.photos/seed/mockp5/360/640",
+        "cover_notes": null,
+        "null_reasons": {
+          "cover_notes": "Only the top 3 and bottom 3 covers are analysed"
+        }
+      }
+    ],
+    "patterns": [
+      {
+        "dimension": "audio",
+        "value": "original",
+        "reel_ids": [
+          "r1",
+          "r2",
+          "r5"
+        ],
+        "median_ratio": 3.9,
+        "in_top": 1,
+        "in_bottom": 1
+      },
+      {
+        "dimension": "audio",
+        "value": "named track",
+        "reel_ids": [
+          "r3",
+          "r4"
+        ],
+        "median_ratio": 2.75,
+        "in_top": 0,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "caption_length",
+        "value": "longer (60+)",
+        "reel_ids": [
+          "r1",
+          "r2"
+        ],
+        "median_ratio": 4.75,
+        "in_top": 1,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "caption_length",
+        "value": "short (< 60)",
+        "reel_ids": [
+          "r3",
+          "r4",
+          "r5"
+        ],
+        "median_ratio": 2.4,
+        "in_top": 0,
+        "in_bottom": 1
+      },
+      {
+        "dimension": "hashtag",
+        "value": "#indianfood",
+        "reel_ids": [
+          "r1",
+          "r2"
+        ],
+        "median_ratio": 4.75,
+        "in_top": 1,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hashtag",
+        "value": "#dal",
+        "reel_ids": [
+          "r1",
+          "r3",
+          "r4"
+        ],
+        "median_ratio": 3.1,
+        "in_top": 1,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hashtag",
+        "value": "#monsoonrecipes",
+        "reel_ids": [
+          "r2",
+          "r5"
+        ],
+        "median_ratio": 3.05,
+        "in_top": 0,
+        "in_bottom": 1
+      },
+      {
+        "dimension": "hook_type",
+        "value": "question",
+        "reel_ids": [
+          "r1",
+          "r3"
+        ],
+        "median_ratio": 4.0,
+        "in_top": 1,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hook_type",
+        "value": "pov",
+        "reel_ids": [
+          "r4"
+        ],
+        "median_ratio": 3.1,
+        "in_top": 0,
+        "in_bottom": 0
+      },
+      {
+        "dimension": "hook_type",
+        "value": "number_list",
+        "reel_ids": [
+          "r2",
+          "r5"
+        ],
+        "median_ratio": 3.05,
+        "in_top": 0,
+        "in_bottom": 1
+      },
+      {
+        "dimension": "weekday",
+        "value": "Thursday",
+        "reel_ids": [
+          "r1",
+          "r3"
+        ],
+        "median_ratio": 4.0,
+        "in_top": 1,
+        "in_bottom": 0
+      }
+    ],
+    "web": [
+      {
+        "title": "Mock article: monsoon recipes are trending",
+        "url": "https://example.com/mock-monsoon-recipes",
+        "snippet": "MOCK snippet for the UI.",
+        "retrieved_at": "2026-10-30T06:00:00Z"
+      },
+      {
+        "title": "Mock post: dal hacks round-up",
+        "url": "https://example.com/mock-dal-hacks",
+        "snippet": null,
+        "retrieved_at": "2026-10-30T06:00:00Z"
+      }
+    ],
+    "previous_run_date": "2026-10-29",
+    "since_last_run": [
+      "New hashtag in outliers: #monsoonrecipes",
+      "New hook type in outliers: number_list"
+    ],
+    "insights": [
+      {
+        "kind": "working",
+        "claim": "Question hooks about a common problem lead today's dal outliers.",
+        "keys": [
+          "pat.hook_type.question"
+        ],
+        "reel_ids": [
+          "r1",
+          "r3"
+        ]
+      },
+      {
+        "kind": "try_next",
+        "claim": "Worth testing: a quick monsoon snack list (#monsoonrecipes showed up in 2 outliers since yesterday).",
+        "keys": [
+          "pat.hashtag.#monsoonrecipes"
+        ],
+        "reel_ids": [
+          "r2",
+          "r5"
+        ]
+      }
+    ],
+    "insights_source": "llm",
+    "null_reasons": {}
+  },
+  "error": null
+}

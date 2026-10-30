@@ -1,0 +1,62 @@
+{
+  "id": "mockcreator2",
+  "kind": "creator",
+  "status": "running",
+  "created_at": "2026-10-30T06:00:00Z",
+  "input": {
+    "handle_or_url": "mock_kitchen_a"
+  },
+  "owner_id": null,
+  "replay": false,
+  "replay_recorded_at": null,
+  "stages": {
+    "fetch": {
+      "status": "done",
+      "reason": null
+    },
+    "analyse": {
+      "status": "running",
+      "reason": null
+    },
+    "visuals": {
+      "status": "pending",
+      "reason": null
+    },
+    "insights": {
+      "status": "pending",
+      "reason": null
+    }
+  },
+  "events": [
+    {
+      "t": 0.0,
+      "source": "system",
+      "kind": "info",
+      "message": "MOCK DATA for building the UI. Not a real run.",
+      "data": null
+    },
+    {
+      "t": 2.1,
+      "source": "scout",
+      "kind": "progress",
+      "message": "Reading @mock_kitchen_a's Reels grid",
+      "data": null
+    },
+    {
+      "t": 9.4,
+      "source": "scout",
+      "kind": "progress",
+      "message": "12 Reels read (1 pinned Reel skipped)",
+      "data": null
+    },
+    {
+      "t": 21.0,
+      "source": "scout",
+      "kind": "progress",
+      "message": "Read 12 Reel pages: captions, dates, audio",
+      "data": null
+    }
+  ],
+  "result": null,
+  "error": null
+}
