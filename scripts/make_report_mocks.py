@@ -246,12 +246,13 @@ PULSE_REELS = [
 ]
 PULSE_HANDLES = ["mock_kitchen_b", "mock_kitchen_c", "mock_kitchen_b", "mock_kitchen_d", "mock_kitchen_e"]
 PULSE_RATIOS = [5.6, 3.9, 2.4, 3.1, 2.2]  # each Reel against its own creator's median
+PULSE_TOPICS = ["dal", "cooking", "dal", "dal", "cooking"]  # the keyword whose page each came from
 
 
 def niche_job() -> ReportJob:
     reels = build_reels(PULSE_REELS, prefix="MOCKP")
-    for r, handle, ratio in zip(reels, PULSE_HANDLES, PULSE_RATIOS):
-        r.handle, r.ratio_vs_median = handle, ratio
+    for r, handle, ratio, topic in zip(reels, PULSE_HANDLES, PULSE_RATIOS, PULSE_TOPICS):
+        r.handle, r.ratio_vs_median, r.topic = handle, ratio, topic
     pulse = NichePulse(
         keywords=["cooking", "dal"],
         run_date=TODAY,

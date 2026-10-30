@@ -356,16 +356,22 @@ async def fetch_outlier_pages(candidates: list[outliers.Candidate], emit: Emit) 
     return examples
 
 
-async def run_niche_scout(topic: str, emit: Emit) -> tuple[list[Creator], list[Example]]:
+async def run_niche_scout(topic: str, emit: Emit, *, use_agent: bool = True) -> tuple[list[Creator], list[Example]]:
     """A3. normalise_topic -> agent_pick_creators and fetch_topic_and_grids together
     (asyncio.gather) -> choose_creators -> read_grids -> outliers.pick_outliers ->
     fetch_outlier_pages. Emit one "creator" event naming who picked whom, and one "outlier"
     event per Example, e.g. "4.7x @pov__gil's median (26.4K vs 5.6K)".
+
+    use_agent=False (v2 Niche Pulse, several keywords at once): skip the Agent, so code picks
+    from the Fetch copy of the topic page. Keeps within the 2-Agent limit and saves ~60 s.
     """
     topic = ig.normalise_topic(topic)
-    agent_picks, (page_handles, grids) = await asyncio.gather(
-        agent_pick_creators(topic, emit), fetch_topic_and_grids(topic, emit)
-    )
+    if use_agent:
+        agent_picks, (page_handles, grids) = await asyncio.gather(
+            agent_pick_creators(topic, emit), fetch_topic_and_grids(topic, emit)
+        )
+    else:
+        agent_picks, (page_handles, grids) = None, await fetch_topic_and_grids(topic, emit)
     creators = choose_creators(agent_picks, page_handles, grids, topic)
     if not creators:
         await _say(emit, "error", f"No creators found for #{topic} on public pages. Try a broader topic, e.g. cooking.")

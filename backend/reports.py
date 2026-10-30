@@ -1,10 +1,12 @@
-"""Report runner for v2 (tasks 1.5, 3.1). One report = one creator, Reel or niche study.
+"""Report runner for v2 (tasks 1.5, 3.1, 5.1). One report = one creator, Reel or niche study.
 
 Called by main.py, like jobs.py is for the v1 draft analyser:
 
     create_report()      write a queued ReportJob to data/reports/{id}.json
     run_creator_report() fetch (1.1) -> analyse (1.2) -> visuals (1.3) -> insights (1.4)
     run_reel_report()    reel page -> creator (1.1 + 1.2 + comparison) -> visuals -> insights (3.2)
+    run_niche_report()   research (5.1) -> patterns vs the previous run (5.2) -> insights (5.2);
+                         each run is kept as data/pulse/<keywords>/<date>.json for the next diff
     start_replay()       REPLAY=1: re-emit the newest recording of that kind, replay=true
 
 Every change appends an Event and rewrites the file, which GET /reports/{id} returns.
@@ -17,6 +19,8 @@ work in the meantime. The functions looked up by name (`_STEPS`):
     vision.analyse_covers(report[, also=[...]])   async: cover_notes; `also` Reels are always described
     creator_report.write_insights(report)         async: insights + insights_source
     creator_report.write_reel_insights(report)    async: the same for a ReelReport
+    creator_metrics.analyse_pulse(pulse, previous) sync: caption fields, patterns, since_last_run
+    creator_report.write_pulse_insights(pulse)    async: insights for a NichePulse
 
 Failure rules (as in jobs.py): a failed stage is marked failed with a reason and the report
 carries on; TinyFishAccountError (key / credits) fails the whole report with a plain message;
@@ -38,12 +42,12 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from backend import creator_profiler, reel_report
+from backend import creator_profiler, niche_pulse, reel_report
 from backend.config import settings
 from backend.jobs import JOB_ID, ReplayUnavailable
 from backend.models import Event, StageState
 from backend.niche_scout import _short
-from backend.report_models import STAGES, CreatorReport, ReelReport, ReportJob, ReportKind
+from backend.report_models import STAGES, CreatorReport, NichePulse, ReelReport, ReportJob, ReportKind
 from backend.tinyfish_client import TinyFishAccountError
 
 _REPORT_ID_RE = re.compile(JOB_ID)  # same 12-hex ids as jobs: never a path
@@ -56,6 +60,8 @@ _STEPS = {
     "visuals": ("vision", "analyse_covers", "1.3"),
     "insights": ("creator_report", "write_insights", "1.4"),
     "reel_insights": ("creator_report", "write_reel_insights", "3.2"),
+    "pulse_patterns": ("creator_metrics", "analyse_pulse", "5.2"),
+    "pulse_insights": ("creator_report", "write_pulse_insights", "5.2"),
 }
 INSIGHT_LINES = {
     "llm": "{n} insight(s) passed every grounding check",
@@ -306,6 +312,77 @@ async def run_reel_report(report_id: str, today: date | None = None) -> ReportJo
             await _step(job, emit, "insights", "reel_insights", lambda fn: _write_insights(fn, report, emit))
         else:
             job.stages["insights"] = StageState(status="skipped", reason="Insights need the analysis step")
+        job.status = "done"
+    except Exception as exc:  # last resort: the UI must always get a final state
+        job.status, job.error = "failed", f"Something went wrong: {exc}"
+    finally:
+        save_report(job)
+    return job
+
+
+# ---------------------------------------------------------------- Niche Pulse (5.1)
+
+
+def _pulse_dir(keywords: list[str]) -> Path:
+    return settings.data_dir / "pulse" / "+".join(sorted(keywords))
+
+
+def _previous_pulse(keywords: list[str], today: date) -> NichePulse | None:
+    """The newest saved run of the same keywords from an earlier day, for "since last run"."""
+    folder = _pulse_dir(keywords)
+    earlier = sorted(p for p in folder.glob("*.json") if p.stem < today.isoformat()) if folder.exists() else []
+    for path in reversed(earlier):
+        try:
+            return NichePulse.model_validate_json(path.read_text())
+        except ValueError:
+            continue
+    return None
+
+
+def _save_pulse(pulse: NichePulse) -> None:
+    folder = _pulse_dir(pulse.keywords)
+    folder.mkdir(parents=True, exist_ok=True)
+    tmp = folder / f"{pulse.run_date}.{uuid.uuid4().hex}.tmp"
+    tmp.write_text(pulse.model_dump_json())
+    tmp.replace(folder / f"{pulse.run_date}.json")
+
+
+async def run_niche_report(report_id: str, today: date | None = None) -> ReportJob:
+    """Research the keywords, then patterns against the previous run, then insights. A day with no
+    outliers still finishes (with its web signals) and is saved, so tomorrow has a baseline."""
+    job = get_report(report_id)
+    if job is None:
+        raise ValueError(f"No report {report_id!r}")
+    keywords: list[str] = job.input["keywords"]
+    today = today or date.today()
+    emit = _emitter(job)
+    try:
+        job.status = "running"
+        job.stages["research"].status = "running"
+        save_report(job)
+        try:
+            pulse = await niche_pulse.run_pulse(keywords, emit, today)
+        except TinyFishAccountError as exc:
+            return _account_failure(job, "research", exc, emit)
+        job.result = pulse
+        job.stages["research"].status = "done"
+        previous = _previous_pulse(keywords, today)
+        _save_pulse(pulse)
+        if not pulse.reels:
+            job.stages["research"].reason = pulse.null_reasons.get("reels")
+            _skip_rest(job, "research", "No outliers to learn from today")
+            job.status = "done"
+            return job
+        save_report(job)
+
+        async def patterns(fn: Callable) -> None:
+            await _call(fn, pulse, previous)
+            since = f"; since {previous.run_date:%d %b}: {len(pulse.since_last_run)} change(s)" if previous else "; first run for these keywords"
+            emit("system", "progress", f"{len(pulse.patterns)} patterns across {len(pulse.reels)} outliers{since}")
+            _save_pulse(pulse)  # with patterns, so the next run's diff has them
+
+        await _step(job, emit, "patterns", "pulse_patterns", patterns)
+        await _step(job, emit, "insights", "pulse_insights", lambda fn: _write_insights(fn, pulse, emit), needs="patterns")
         job.status = "done"
     except Exception as exc:  # last resort: the UI must always get a final state
         job.status, job.error = "failed", f"Something went wrong: {exc}"

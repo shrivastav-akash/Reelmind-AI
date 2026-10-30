@@ -59,6 +59,7 @@ class ReelStat(BaseModel):
     access_status: AccessStatus
     status_reason: str | None = None  # why the Reel page couldn't be read; such a Reel can't be cited
     handle: str | None = None  # set in Niche Pulse, where Reels come from many creators
+    topic: str | None = None  # Niche Pulse: the keyword whose topic page it was found on
     pinned: bool = False
     posted_date: date | None = None
     in_window: bool = False  # posted in the last WINDOW_DAYS days

@@ -14,6 +14,9 @@ Routes:
 - POST /reports/reel {url}: v2 Reel report (the Reel vs its creator) -> 202 {report_id}; runs in
   the background (reports.run_reel_report). A link that isn't an Instagram Reel is a 400.
   REPLAY=1 replays the newest recorded Reel report (503 if there is none).
+- POST /reports/niche {keywords}: v2 Niche Pulse for 1-3 keywords/hashtags -> 202 {report_id};
+  runs in the background (reports.run_niche_report). Bad or too many keywords are a 400.
+  REPLAY=1 replays the newest recorded Niche Pulse (503 if there is none).
 - GET /reports/{report_id}: the ReportJob (backend/report_models.py); 404 if unknown.
 - POST /auth/signup {email, password, instagram_url} -> 201 AuthSession; 400 / 409 with a reason.
 - POST /auth/login {email, password} -> AuthSession; 401 "Email or password is wrong."
@@ -30,7 +33,7 @@ from pathlib import Path
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend import auth, creator_profiler, jobs, reel_report, reports, video
+from backend import auth, creator_profiler, jobs, niche_pulse, reel_report, reports, video
 from backend.config import settings
 from backend.creator_profiler import HandleRejected
 from backend.instagram_parse import TopicRejected, normalise_topic
@@ -39,6 +42,7 @@ from backend.report_models import (
     AuthSession,
     CreatorReportRequest,
     LoginRequest,
+    NicheReportRequest,
     ReelReportRequest,
     SignupRequest,
     UserPublic,
@@ -145,6 +149,23 @@ async def start_reel_report(body: ReelReportRequest, background: BackgroundTasks
         return {"report_id": replay.id}
     job = reports.create_report("reel", {"url": body.url, "reel_url": reel_url})
     background.add_task(reports.run_reel_report, job.id)
+    return {"report_id": job.id}
+
+
+@app.post("/reports/niche", status_code=202)
+async def start_niche_report(body: NicheReportRequest, background: BackgroundTasks) -> dict:
+    try:
+        keywords = niche_pulse.parse_keywords(body.keywords)
+    except (TopicRejected, niche_pulse.KeywordsRejected) as exc:
+        raise HTTPException(400, str(exc)) from exc
+    if settings.replay:
+        try:
+            replay = await reports.start_replay("niche")
+        except jobs.ReplayUnavailable as exc:
+            raise HTTPException(503, str(exc)) from exc
+        return {"report_id": replay.id}
+    job = reports.create_report("niche", {"keywords": keywords})
+    background.add_task(reports.run_niche_report, job.id)
     return {"report_id": job.id}
 
 
