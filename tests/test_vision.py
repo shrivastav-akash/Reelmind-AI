@@ -7,8 +7,6 @@ from backend import llm_client, vision
 from backend.models import VisionResult
 from backend.video import Frame, Word
 
-# Built on Friday: run with `pytest -m friday`. Delete this line once the file passes.
-pytestmark = pytest.mark.friday
 
 
 @pytest.fixture

@@ -5,8 +5,6 @@ import pytest
 from backend import llm_client, recommend, validate
 from backend.models import Experiment, Suggestion, SuggestionSet
 
-# Built on Friday: run with `pytest -m friday`. Delete this line once the file passes.
-pytestmark = pytest.mark.friday
 
 
 def suggestion(evidence=("ex1",), keys=("m.payoff_at_s",)):
