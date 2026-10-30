@@ -388,3 +388,273 @@ button.primary:disabled {
   padding-top: 16px;
   border-top: 1px solid var(--line);
 }
+
+/* ---------------------------------------------------------------- v2: tabs + reports */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 24px;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.tabs-brand {
+  font-weight: 800;
+  font-size: 22px;
+  margin-right: 20px;
+}
+
+.tab {
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.tab:hover {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.field.grow {
+  flex: 1;
+  min-width: 260px;
+}
+
+.field input[type='text'] {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  width: 100%;
+}
+
+.report {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr);
+  gap: 20px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .report {
+    grid-template-columns: 1fr;
+  }
+}
+
+.report-side,
+.report-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.stages {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.status-pending,
+.status-running,
+.status-skipped {
+  background: var(--grey-bg);
+  color: var(--grey);
+}
+
+.status-done {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.status-failed {
+  background: var(--bad-bg);
+  color: var(--bad);
+}
+
+.facts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px 20px;
+  margin: 12px 0;
+}
+
+.facts-grid dt {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.facts-grid dd {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 750;
+}
+
+.note {
+  background: var(--accent-soft);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.insight-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.insight-group ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.insight-group li {
+  border-left: 4px solid var(--line);
+  padding: 4px 0 4px 12px;
+}
+
+.insight-working li {
+  border-color: var(--ok);
+}
+
+.insight-not_working li {
+  border-color: var(--bad);
+}
+
+.insight-try_next li {
+  border-color: var(--accent);
+}
+
+.insight-group p {
+  margin: 0 0 4px;
+}
+
+.chip {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 16px;
+}
+
+th,
+td {
+  text-align: left;
+  vertical-align: top;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+thead th {
+  color: var(--muted);
+  font-weight: 650;
+  font-size: 14px;
+}
+
+tr.in-window {
+  background: #f2faf8;
+}
+
+tr:target {
+  outline: 3px solid var(--accent);
+}
+
+td.hook {
+  max-width: 22em;
+}
+
+.ratio {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-weight: 750;
+}
+
+.ratio-high {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.ratio-up {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.ratio-down {
+  background: var(--bad-bg);
+  color: var(--bad);
+}
+
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px 24px;
+}
+
+.patterns {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+}
+
+.patterns li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.web {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.web p {
+  margin: 2px 0 0;
+}

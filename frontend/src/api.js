@@ -8,6 +8,10 @@
 import mockDone from './mocks/job.done.json'
 import mockRunning from './mocks/job.running.json'
 import mockFailed from './mocks/job.failed.json'
+import mockCreator from './mocks/report.creator.json'
+import mockCreatorRunning from './mocks/report.creator.running.json'
+import mockNiche from './mocks/report.niche.json'
+import mockReel from './mocks/report.reel.json'
 
 // `||`, not `??`: a blank VITE_API_URL= line would otherwise send requests to the Vite server.
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -64,4 +68,33 @@ function mockJob() {
 export async function getJob(jobId) {
   if (USE_MOCK) return mockJob()
   return request(`/jobs/${encodeURIComponent(jobId)}`)
+}
+
+// ---------------------------------------------------------------- v2 reports (backend/report_models.py)
+
+export const REPORT_NOT_FOUND = "We couldn't find that report."
+const MOCK_REPORTS = { creator: mockCreator, reel: mockReel, niche: mockNiche }
+
+// POST /reports/{kind} with { handle_or_url } | { url } | { keywords: [...] }. Resolves to
+// { report_id }; a 400 rejects with the server's reason (e.g. "Paste an Instagram Reel link…").
+export async function startReport(kind, body) {
+  if (USE_MOCK) return { report_id: `mock-${kind}` }
+  return request(`/reports/${kind}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+// GET /reports/{id}. Resolves to a ReportJob. Mock mode: the creator mock runs once, then is done.
+let mockReportPolls = 0
+export async function getReport(reportId) {
+  if (USE_MOCK) {
+    const kind = String(reportId).replace('mock-', '')
+    mockReportPolls += 1
+    if (kind === 'creator' && mockReportPolls < 2) return mockCreatorRunning
+    return MOCK_REPORTS[kind] ?? mockCreator
+  }
+  if (!reportId || reportId.startsWith('mock-')) throw apiError(REPORT_NOT_FOUND, 404)
+  return request(`/reports/${encodeURIComponent(reportId)}`)
 }

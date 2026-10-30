@@ -101,6 +101,8 @@ describe('uploading', () => {
   it('can be used with the keyboard alone', async () => {
     const user = userEvent.setup()
     render(<App />)
+    await user.tab() // the tool tabs come first: one Tab stop, arrow keys move between them
+    expect(screen.getByRole('tab', { name: 'Analyse a draft' })).toHaveFocus()
     await user.tab()
     expect(screen.getByLabelText(/draft video/i)).toHaveFocus()
     await user.tab()
