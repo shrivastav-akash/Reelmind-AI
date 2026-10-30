@@ -8,6 +8,10 @@ Routes:
   A bad file or topic is a 400 whose detail the UI shows as-is. With REPLAY=1 it starts a
   replay of the newest recording instead (503 if there is none).
 - GET /jobs/{job_id}: the Job (backend/models.py) for the UI to poll; 404 if unknown.
+- POST /reports/creator {handle_or_url}: v2 creator report -> 202 {report_id}; runs in the
+  background (reports.run_creator_report). A handle we can't read is a 400. REPLAY=1 replays
+  the newest recorded creator report instead (503 if there is none).
+- GET /reports/{report_id}: the ReportJob (backend/report_models.py); 404 if unknown.
 """
 
 import os
@@ -17,9 +21,11 @@ from pathlib import Path
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend import jobs, video
+from backend import creator_profiler, jobs, reports, video
 from backend.config import settings
+from backend.creator_profiler import HandleRejected
 from backend.instagram_parse import TopicRejected, normalise_topic
+from backend.report_models import CreatorReportRequest
 from backend.video import VideoRejected
 
 app = FastAPI(title="ReelMind AI")
@@ -85,4 +91,32 @@ def get_job(job_id: str) -> dict:
     job = jobs.get_job(job_id)
     if job is None:
         raise HTTPException(404, "We couldn't find that analysis.")
+    return job.model_dump(mode="json")
+
+
+# ---------------------------------------------------------------- v2 reports
+
+
+@app.post("/reports/creator", status_code=202)
+async def start_creator_report(body: CreatorReportRequest, background: BackgroundTasks) -> dict:
+    try:
+        handle = creator_profiler.parse_handle(body.handle_or_url)
+    except HandleRejected as exc:
+        raise HTTPException(400, str(exc)) from exc
+    if settings.replay:
+        try:
+            replay = await reports.start_replay("creator")
+        except jobs.ReplayUnavailable as exc:
+            raise HTTPException(503, str(exc)) from exc
+        return {"report_id": replay.id}
+    job = reports.create_report("creator", {"handle_or_url": body.handle_or_url, "handle": handle})
+    background.add_task(reports.run_creator_report, job.id)
+    return {"report_id": job.id}
+
+
+@app.get("/reports/{report_id}")
+def get_report(report_id: str) -> dict:
+    job = reports.get_report(report_id)
+    if job is None:
+        raise HTTPException(404, "We couldn't find that report.")
     return job.model_dump(mode="json")
