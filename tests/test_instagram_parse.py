@@ -182,6 +182,21 @@ def test_parse_followers(desc, followers):
     assert ig.parse_followers(desc) == followers
 
 
+@pytest.mark.parametrize(
+    "desc, counts",
+    [
+        ("875K Followers, 1,027 Following, 1,712 Posts - See Instagram photos", (875_000, 1027, 1712)),
+        ("9,067 Followers, 41 Following, 236 Posts - See", (9067, 41, 236)),
+        ("1 Follower, 0 Following, 1 Post - See", (1, 0, 1)),
+        ("Watch short videos about cooking", (None, None, None)),
+        (None, (None, None, None)),
+    ],
+)
+def test_parse_profile_counts(desc, counts):
+    c = ig.parse_profile_counts(desc)
+    assert (c.followers, c.following, c.posts) == counts
+
+
 @pytest.mark.parametrize("handle", CREATORS)
 def test_parse_grid_real_pages(handle):  # D11
     p = page(f"grid_{handle}")

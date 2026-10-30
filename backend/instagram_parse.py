@@ -201,6 +201,22 @@ def parse_followers(description: str | None) -> int | None:
 
 
 @dataclass
+class ProfileCounts:
+    followers: int | None
+    following: int | None
+    posts: int | None
+
+
+def parse_profile_counts(description: str | None) -> ProfileCounts:
+    """The same line as parse_followers, all three counts: '204K Followers, 8 Following, 184 Posts' ->
+    (204000, 8, 184). Rounded like the page shows them ("204K"); None when the line isn't there."""
+    m = PROFILE_DESCRIPTION.match((description or "").strip())
+    if not m:
+        return ProfileCounts(None, None, None)
+    return ProfileCounts(to_int(m["followers"]), to_int(m["following"]), to_int(m["posts"]))
+
+
+@dataclass
 class GridTile:
     reel_url: str
     likes: int | None
