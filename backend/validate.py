@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 
 from backend.models import Example, Suggestion, SuggestionSet, ValidatorNote, VideoMeasurements
+from backend.report_models import Insight, InsightDraft, InsightSet
 
 # Prefix matches catch "virality", "algorithms", "guaranteed" as well.
 BANNED_PATTERN = re.compile(r"\b(viral\w*|guarantee\w*|algorithm\w*|secret\w*|will get)\b", re.IGNORECASE)
@@ -76,3 +77,45 @@ def has_citable_evidence(examples: list[Example]) -> bool:
 def retry_reasons(notes: list[ValidatorNote]) -> list[str]:
     """Reasons formatted for the regenerate prompt (docs/prompts.md §3)."""
     return [f"suggestion {n.suggestion_index + 1}: {r}" for n in notes for r in n.reasons]
+
+
+# ---------------------------------------------------------------- v2 report insights (task 1.4)
+
+INSIGHT_KINDS = ("working", "not_working", "try_next")
+
+
+def check_insight(draft: InsightDraft, known_keys: set[str], citable_ids: set[str]) -> list[str]:
+    """Every reason one InsightDraft (report_models) breaks the grounding rules; empty means it may
+    be shown. `citable_ids` holds only Reels whose page was read (access_status "accessible")."""
+    reasons: list[str] = []
+    if draft.kind not in INSIGHT_KINDS:
+        reasons.append(f"kind {draft.kind!r} must be one of {', '.join(INSIGHT_KINDS)}")
+    if not draft.keys:
+        reasons.append("cites no key")
+    for key in draft.keys:
+        if key not in known_keys:
+            reasons.append(f"key {key} does not exist")
+    if not draft.reel_ids:
+        reasons.append("cites no Reel")
+    for reel_id in draft.reel_ids:
+        if reel_id not in citable_ids:
+            reasons.append(f"Reel {reel_id} does not exist or its page wasn't readable")
+    if draft.kind in ("working", "not_working") and not re.search(r"\d", draft.claim):
+        reasons.append("claim quotes no number")
+    found = banned_words(draft.claim)
+    if found:
+        reasons.append("uses banned words: " + ", ".join(sorted(set(found))))
+    return reasons
+
+
+def validate_insights(answer: InsightSet, known_keys: set[str], citable_ids: set[str]) -> tuple[list[Insight], list[str]]:
+    """Split an InsightSet into Insights we can show, plus every reason for the retry prompt."""
+    kept: list[Insight] = []
+    reasons: list[str] = []
+    for i, draft in enumerate(answer.insights):
+        problems = check_insight(draft, known_keys, citable_ids)
+        if problems:
+            reasons += [f"insight {i + 1}: {p}" for p in problems]
+        else:
+            kept.append(Insight(kind=draft.kind, claim=draft.claim.strip(), keys=draft.keys, reel_ids=draft.reel_ids))
+    return kept, reasons

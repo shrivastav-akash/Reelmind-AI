@@ -106,6 +106,23 @@ class Insight(BaseModel):
     reel_ids: list[str]
 
 
+class InsightDraft(BaseModel):
+    """One insight as Gemini writes it. `kind` is a plain string so an odd value becomes a
+    validator reason (and a retry), not a schema failure; validate.validate_insights turns
+    the drafts that pass into Insights."""
+
+    kind: str
+    claim: str
+    keys: list[str]
+    reel_ids: list[str]
+
+
+class InsightSet(BaseModel):
+    """Gemini response_schema for creator_report.py."""
+
+    insights: list[InsightDraft]
+
+
 class ComparisonRow(BaseModel):
     """Reel report: this Reel next to its creator's usual, e.g. "Hook type: question vs statement"."""
 
