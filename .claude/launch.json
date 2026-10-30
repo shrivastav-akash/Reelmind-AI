@@ -8,6 +8,12 @@
       "port": 8000
     },
     {
+      "name": "backend-replay",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "REPLAY=1 .venv/bin/uvicorn backend.main:app --port 8000"],
+      "port": 8000
+    },
+    {
       "name": "frontend",
       "runtimeExecutable": "sh",
       "runtimeArgs": ["-c", "cd frontend && VITE_USE_MOCK=0 VITE_API_URL=http://localhost:8000 npm run dev -- --port 5173 --strictPort"],
