@@ -253,6 +253,14 @@ class UserPublic(BaseModel):
     latest_report_id: str | None = None
 
 
+class AuthSession(BaseModel):
+    """POST /auth/signup and /auth/login. The UI keeps `token` and sends it as
+    `Authorization: Bearer <token>`; it lasts 7 days or until POST /auth/logout."""
+
+    token: str
+    user: UserPublic
+
+
 class ChatTurn(BaseModel):
     role: Literal["user", "assistant"]
     text: str

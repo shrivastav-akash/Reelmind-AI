@@ -15,21 +15,31 @@ Routes:
   the background (reports.run_reel_report). A link that isn't an Instagram Reel is a 400.
   REPLAY=1 replays the newest recorded Reel report (503 if there is none).
 - GET /reports/{report_id}: the ReportJob (backend/report_models.py); 404 if unknown.
+- POST /auth/signup {email, password, instagram_url} -> 201 AuthSession; 400 / 409 with a reason.
+- POST /auth/login {email, password} -> AuthSession; 401 "Email or password is wrong."
+- POST /auth/logout, GET /me: need `Authorization: Bearer <token>`, else 401.
 """
 
 import os
 import tempfile
 from pathlib import Path
 
-from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend import creator_profiler, jobs, reel_report, reports, video
+from backend import auth, creator_profiler, jobs, reel_report, reports, video
 from backend.config import settings
 from backend.creator_profiler import HandleRejected
 from backend.instagram_parse import TopicRejected, normalise_topic
 from backend.reel_report import ReelUrlRejected
-from backend.report_models import CreatorReportRequest, ReelReportRequest
+from backend.report_models import (
+    AuthSession,
+    CreatorReportRequest,
+    LoginRequest,
+    ReelReportRequest,
+    SignupRequest,
+    UserPublic,
+)
 from backend.video import VideoRejected
 
 app = FastAPI(title="ReelMind AI")
@@ -141,3 +151,35 @@ def get_report(report_id: str) -> dict:
     if job is None:
         raise HTTPException(404, "We couldn't find that report.")
     return job.model_dump(mode="json")
+
+
+# ---------------------------------------------------------------- accounts (v2, task 4.1)
+# Sync routes: FastAPI runs them in its thread pool, so scrypt and SQLite never block the event loop.
+
+
+@app.post("/auth/signup", status_code=201)
+def signup(body: SignupRequest) -> AuthSession:
+    try:
+        user, token = auth.signup(body.email, body.password, body.instagram_url)
+    except auth.AuthError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+    return AuthSession(token=token, user=user)
+
+
+@app.post("/auth/login")
+def login(body: LoginRequest) -> AuthSession:
+    try:
+        user, token = auth.login(body.email, body.password)
+    except auth.AuthError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+    return AuthSession(token=token, user=user)
+
+
+@app.post("/auth/logout", status_code=204)
+def logout(user: UserPublic = Depends(auth.require_user), authorization: str | None = Header(None)) -> None:
+    auth.logout(auth.bearer_token(authorization))
+
+
+@app.get("/me")
+def me(user: UserPublic = Depends(auth.require_user)) -> UserPublic:
+    return user
