@@ -11,6 +11,9 @@ Routes:
 - POST /reports/creator {handle_or_url}: v2 creator report -> 202 {report_id}; runs in the
   background (reports.run_creator_report). A handle we can't read is a 400. REPLAY=1 replays
   the newest recorded creator report instead (503 if there is none).
+- POST /reports/reel {url}: v2 Reel report (the Reel vs its creator) -> 202 {report_id}; runs in
+  the background (reports.run_reel_report). A link that isn't an Instagram Reel is a 400.
+  REPLAY=1 replays the newest recorded Reel report (503 if there is none).
 - GET /reports/{report_id}: the ReportJob (backend/report_models.py); 404 if unknown.
 """
 
@@ -21,11 +24,12 @@ from pathlib import Path
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend import creator_profiler, jobs, reports, video
+from backend import creator_profiler, jobs, reel_report, reports, video
 from backend.config import settings
 from backend.creator_profiler import HandleRejected
 from backend.instagram_parse import TopicRejected, normalise_topic
-from backend.report_models import CreatorReportRequest
+from backend.reel_report import ReelUrlRejected
+from backend.report_models import CreatorReportRequest, ReelReportRequest
 from backend.video import VideoRejected
 
 app = FastAPI(title="ReelMind AI")
@@ -111,6 +115,23 @@ async def start_creator_report(body: CreatorReportRequest, background: Backgroun
         return {"report_id": replay.id}
     job = reports.create_report("creator", {"handle_or_url": body.handle_or_url, "handle": handle})
     background.add_task(reports.run_creator_report, job.id)
+    return {"report_id": job.id}
+
+
+@app.post("/reports/reel", status_code=202)
+async def start_reel_report(body: ReelReportRequest, background: BackgroundTasks) -> dict:
+    try:
+        reel_url = reel_report.parse_reel_url(body.url)
+    except ReelUrlRejected as exc:
+        raise HTTPException(400, str(exc)) from exc
+    if settings.replay:
+        try:
+            replay = await reports.start_replay("reel")
+        except jobs.ReplayUnavailable as exc:
+            raise HTTPException(503, str(exc)) from exc
+        return {"report_id": replay.id}
+    job = reports.create_report("reel", {"url": body.url, "reel_url": reel_url})
+    background.add_task(reports.run_reel_report, job.id)
     return {"report_id": job.id}
 
 
