@@ -328,19 +328,25 @@ def record(job: ReportJob) -> Path:
     return dst
 
 
-async def start_replay(kind: ReportKind, speed: float = 1.0) -> ReportJob:
+async def start_replay(kind: ReportKind, speed: float = 1.0, *, handle: str | None = None,
+                       owner_id: int | None = None) -> ReportJob:
     """Newest recording of this kind -> a new ReportJob with replay=True, returned at once; a
     background task re-emits its events on their original timing (divided by `speed`) and sets
-    the result at the end. Never calls TinyFish or Gemini. None recorded -> ReplayUnavailable."""
+    the result at the end. Never calls TinyFish or Gemini. None recorded -> ReplayUnavailable.
+
+    `handle`: only a recording of that creator (My Studio must never show someone else's
+    report as yours, replay or not)."""
     folder = _recordings_dir()
     recordings = sorted(folder.glob(f"{kind}_*.json"), key=lambda p: p.stat().st_mtime) if folder.exists() else []
-    if not recordings:
-        raise ReplayUnavailable(f"No recorded {kind} report to replay yet. Record one with "
+    candidates = (ReportJob.model_validate_json(p.read_text()) for p in reversed(recordings))
+    recorded = next((r for r in candidates if handle is None or r.input.get("handle") == handle), None)
+    if recorded is None:
+        whose = f" of @{handle}" if handle else ""
+        raise ReplayUnavailable(f"No recorded {kind} report{whose} to replay yet. Record one with "
                                 "scripts/record_replay.py --report <id>, or set REPLAY=0.")
-    recorded = ReportJob.model_validate_json(recordings[-1].read_text())
     # The replay shows the recorded input, whatever was typed: it's a recording, not a new run.
     job = ReportJob(id=secrets.token_hex(6), kind=kind, status="running", created_at=datetime.now(timezone.utc),
-                    input=recorded.input, replay=True, replay_recorded_at=recorded.created_at,
+                    input=recorded.input, owner_id=owner_id, replay=True, replay_recorded_at=recorded.created_at,
                     stages={name: StageState(status="running" if i == 0 else "pending") for i, name in enumerate(STAGES[kind])})
     save_report(job)
     task = asyncio.create_task(_replay(job, recorded, speed))

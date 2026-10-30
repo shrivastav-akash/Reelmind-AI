@@ -18,8 +18,11 @@ Routes:
 - POST /auth/signup {email, password, instagram_url} -> 201 AuthSession; 400 / 409 with a reason.
 - POST /auth/login {email, password} -> AuthSession; 401 "Email or password is wrong."
 - POST /auth/logout, GET /me: need `Authorization: Bearer <token>`, else 401.
+- Sign-up also starts the user's own creator report (4.3); `user.latest_report_id` points at it.
+  POST /me/refresh starts a new one (or returns the one still running) -> 202 {report_id}.
 """
 
+import asyncio
 import os
 import tempfile
 from pathlib import Path
@@ -153,17 +156,34 @@ def get_report(report_id: str) -> dict:
     return job.model_dump(mode="json")
 
 
-# ---------------------------------------------------------------- accounts (v2, task 4.1)
-# Sync routes: FastAPI runs them in its thread pool, so scrypt and SQLite never block the event loop.
+# ---------------------------------------------------------------- accounts (v2, tasks 4.1, 4.3)
+# scrypt and SQLite block: sync routes run in FastAPI's thread pool, async ones use asyncio.to_thread.
+
+
+async def _start_own_report(user: UserPublic, background: BackgroundTasks) -> str | None:
+    """4.3: a creator report of the user's own account, saved as their latest_report_id.
+    With REPLAY=1 only a recording of their own handle is replayed (never someone else's
+    report shown as theirs); with none, no report starts and None is returned."""
+    if settings.replay:
+        try:
+            job = await reports.start_replay("creator", handle=user.ig_handle, owner_id=user.id)
+        except jobs.ReplayUnavailable:
+            return None
+    else:
+        job = reports.create_report("creator", {"handle_or_url": user.profile_url, "handle": user.ig_handle}, owner_id=user.id)
+        background.add_task(reports.run_creator_report, job.id)
+    await asyncio.to_thread(auth.set_latest_report, user.id, job.id)
+    return job.id
 
 
 @app.post("/auth/signup", status_code=201)
-def signup(body: SignupRequest) -> AuthSession:
+async def signup(body: SignupRequest, background: BackgroundTasks) -> AuthSession:
     try:
-        user, token = auth.signup(body.email, body.password, body.instagram_url)
+        user, token = await asyncio.to_thread(auth.signup, body.email, body.password, body.instagram_url)
     except auth.AuthError as exc:
         raise HTTPException(exc.status, str(exc)) from exc
-    return AuthSession(token=token, user=user)
+    report_id = await _start_own_report(user, background)
+    return AuthSession(token=token, user=user.model_copy(update={"latest_report_id": report_id}))
 
 
 @app.post("/auth/login")
@@ -183,3 +203,15 @@ def logout(user: UserPublic = Depends(auth.require_user), authorization: str | N
 @app.get("/me")
 def me(user: UserPublic = Depends(auth.require_user)) -> UserPublic:
     return user
+
+
+@app.post("/me/refresh", status_code=202)
+async def refresh_my_report(background: BackgroundTasks, user: UserPublic = Depends(auth.require_user)) -> dict:
+    # A report still running is returned as is: repeated clicks never start a second TinyFish run.
+    current = reports.get_report(user.latest_report_id) if user.latest_report_id else None
+    if current and current.status in ("queued", "running"):
+        return {"report_id": current.id}
+    report_id = await _start_own_report(user, background)
+    if report_id is None:
+        raise HTTPException(503, f"No recorded report of @{user.ig_handle} to replay. Record one, or set REPLAY=0.")
+    return {"report_id": report_id}

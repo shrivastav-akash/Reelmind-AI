@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from fastapi.testclient import TestClient
 
-from backend import auth
+from backend import auth, reports
 
 PASSWORD = "correct horse battery"
 
@@ -18,6 +18,12 @@ PASSWORD = "correct horse battery"
 @pytest.fixture
 def env(isolated, monkeypatch):
     monkeypatch.setattr(auth, "settings", isolated, raising=False)
+    monkeypatch.setattr(reports, "settings", isolated, raising=False)
+
+    async def no_run(report_id, today=None):  # sign-up starts a report (4.3): tested in test_my_report.py
+        return None
+
+    monkeypatch.setattr(reports, "run_creator_report", no_run)
     return isolated
 
 
@@ -51,7 +57,7 @@ def test_signup_returns_a_session_and_the_public_user(client):
     user = body["user"]
     assert user["email"] == "cook@example.com"  # stored lowercase
     assert user["ig_handle"] == "eylems_kitchen" and user["profile_url"] == "https://www.instagram.com/eylems_kitchen/"
-    assert user["latest_report_id"] is None
+    assert user["latest_report_id"]  # their own report started (4.3)
     assert not {"password", "pw_hash", "pw_salt"} & set(user)
 
 
