@@ -13,9 +13,6 @@ from backend.tinyfish_client import TinyFishAccountError
 
 from .conftest import SAMPLES
 
-# Built on Friday: run with `pytest -m friday`. Delete this line once the file passes.
-pytestmark = pytest.mark.friday
-
 CLIP = SAMPLES / "synthetic_clip.mp4"
 
 
