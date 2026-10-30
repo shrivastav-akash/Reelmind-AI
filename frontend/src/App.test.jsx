@@ -1,4 +1,4 @@
-// Defines "done" for the UI built on Friday (task S1-S4). Run with `npm run test:friday`.
+// Defines "done" for the UI (Fri tasks S1-S4).
 // Each test does what a real user does: picks a file, types a topic, clicks, waits,
 // refreshes, follows a link. Elements are found by their visible label/role, the way
 // people and screen readers find them; the labels are the contract in
