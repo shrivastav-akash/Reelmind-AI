@@ -4,6 +4,7 @@ Niche Scout, TinyFish Search and Fetch are faked with the v1 mock job's creators
 the intelligence-lane steps (5.2) are faked through reports._stage_fn, including "not built yet".
 """
 
+import re
 from dataclasses import replace
 from datetime import date
 
@@ -53,7 +54,7 @@ def test_a_bad_keyword_says_why():
 class Internet:
     def __init__(self):
         self.outliers = {"cooking": [0, 1], "dal": [1, 2]}  # indexes into DONE.examples; ex2 is under both
-        self.account_error = False
+        self.account_error = self.no_relevant_web = False
         self.scouted, self.searched, self.fetched = [], [], []
 
     async def run_niche_scout(self, topic, emit, *, use_agent=True):
@@ -66,9 +67,16 @@ class Internet:
 
     async def search(self, query):
         self.searched.append(query)
-        topic = query.split()[0]
-        hits = [SearchHit(title=f"{topic} trend {n}", url=f"https://example.com/{topic}/{n}", snippet="s") for n in range(7)]
-        return [SearchHit(title="shared", url="https://example.com/shared", snippet="")] + hits  # same hit for every keyword
+        topic = re.search(r'[#"](\w+)', query).group(1)
+        if self.no_relevant_web:
+            return [SearchHit(title="Olympic medal reels", url="https://example.com/medal", snippet="")]
+        if query.startswith('"'):
+            return [
+                SearchHit(title="Shared cooking and dal post", url="https://example.com/shared", snippet=""),  # both keywords find it
+                SearchHit(title="Olympic medal reels", url="https://example.com/medal", snippet="sport highlights"),
+                *(SearchHit(title=f"{topic} trend {n}", url=f"https://example.com/{topic}/t{n}", snippet="s") for n in range(3)),
+            ]
+        return [SearchHit(title=f"{topic} pick {n}", url=f"https://example.com/{topic}/p{n}", snippet="s") for n in range(5)]
 
     async def fetch_pages(self, urls, *, fmt="markdown", html_head=False, purpose=None, redact=None, fallback_to_cache=True):
         assert fmt == "markdown" and redact is not None
@@ -96,8 +104,8 @@ def collect(events):
 async def test_run_pulse_gathers_outliers_and_web_signals(net):
     events = []
     pulse = await niche_pulse.run_pulse(["cooking", "dal"], collect(events), TODAY)
-    assert net.scouted == ["cooking", "dal"] and net.searched == [
-        "cooking instagram reels trend this week", "dal instagram reels trend this week"]
+    assert net.scouted == ["cooking", "dal"] and sorted(net.searched) == [
+        '"cooking" reels trending this week', '"dal" reels trending this week', "#cooking instagram reels", "#dal instagram reels"]
     # ex2 was an outlier under both keywords: kept once; best ratio first; numbered after sorting
     assert [r.source_url[-12:] for r in pulse.reels] == ["MOCK0000001/", "MOCK0000002/", "MOCK0000003/"]
     assert [r.id for r in pulse.reels] == ["r1", "r2", "r3"] and [r.ratio_vs_median for r in pulse.reels] == [3.1, 2.4, 2.1]
@@ -111,9 +119,34 @@ async def test_web_signals_capped_and_deduplicated(net):
     pulse = await niche_pulse.run_pulse(["cooking", "dal"], collect([]), TODAY)
     urls = [w.url for w in pulse.web]
     assert len(urls) == len(set(urls)) == 9  # 5 per keyword, and the hit both keywords found is kept once
-    assert urls.count("https://example.com/shared") == 1
+    assert urls.count("https://example.com/shared") == 1 and "https://example.com/medal" not in urls
+    assert urls[:5] == ["https://example.com/shared", *(f"https://example.com/cooking/t{n}" for n in range(3)),
+                        "https://example.com/cooking/p0"]  # the quoted query's hits first, then the hashtag query's
     assert all(w.retrieved_at for w in pulse.web)
     assert pulse.web[0].snippet is None  # an empty snippet isn't shown as ""
+
+
+async def test_web_results_that_dont_name_the_keyword_are_dropped(net):
+    net.no_relevant_web = True
+    events = []
+    pulse = await niche_pulse.run_pulse(["dal"], collect(events), TODAY)
+    assert pulse.web == [] and "#dal: No web results mention #dal" in events
+
+
+@pytest.mark.parametrize(
+    "title, url, topic, expected",
+    [
+        ("Dal is life", "https://x.example/a", "dal", True),
+        ("Dal Chivda Reels", "https://www.instagram.com/popular/dal-chivda-reels", "dal", True),
+        ("x", "https://www.instagram.com/explore/tags/dal/", "dal", True),
+        ("Trending Reels Daleng", "https://x.example/b", "dal", False),
+        ("Olympic medal reels", "https://x.example/medal", "dal", False),
+        ("Instagram Reels Trends This Week", "https://www.instagram.com/popular/reel-trends", "dal", False),
+        ("#cooking | TikTok", "https://www.tiktok.com/tag/cooking", "cooking", True),
+    ],
+)
+def test_mentions_needs_the_whole_word(title, url, topic, expected):
+    assert niche_pulse.mentions(SearchHit(title=title, url=url, snippet=""), topic) is expected
 
 
 async def test_audio_comes_from_one_markdown_fetch(net):

@@ -3,7 +3,7 @@
     keywords -> parse_keywords (normalise_topic each, dedupe, 1-3)
              -> per keyword, at the same time:
                   niche_scout.run_niche_scout(topic, use_agent=False)   topic page -> creators -> outliers
-                  tinyfish_client.search("<topic> instagram reels trend this week")  -> WebSignals
+                  tinyfish_client.search x2 (SEARCH_QUERIES) -> WebSignals that name the keyword
              -> one markdown Fetch of all outlier pages for their audio names
              -> NichePulse: outlier Reels (r1 = highest ratio) with handle + topic, web signals
 
@@ -16,6 +16,7 @@ Network only through tinyfish_client, called through the module so tests can swa
 from __future__ import annotations
 
 import asyncio
+import re
 from datetime import date, datetime, timezone
 
 from backend import instagram_parse as ig
@@ -27,7 +28,10 @@ from backend.report_models import NichePulse, ReelStat, WebSignal
 
 MAX_KEYWORDS = 3
 SEARCH_HITS = 5  # per keyword
-SEARCH_QUERY = "{topic} instagram reels trend this week"
+# Checked live on 30 Oct (dal, cooking, skincare): the unquoted "<topic> instagram reels trend this
+# week" drifted to generic "Reels trends" pages for a narrow keyword; these two stay on topic. Each
+# returns only 3-5 hits, so both run (search is free) and their hits are merged.
+SEARCH_QUERIES = ('"{topic}" reels trending this week', "#{topic} instagram reels")
 _REEL_FIELDS = set(ReelStat.model_fields)
 
 
@@ -57,12 +61,22 @@ def _for_topic(emit: Emit, topic: str) -> Emit:
     return emit_topic
 
 
+def mentions(hit: tinyfish_client.SearchHit, topic: str) -> bool:
+    """The keyword as a whole word in the title, snippet or URL: "dal" matches "/dal-chivda-reels"
+    and "Dal is life", not "medal" or "Daleng"."""
+    text = f"{hit.title} {hit.snippet} {hit.url}".lower()
+    return re.search(rf"(?<!\w){re.escape(topic)}(?!\w)", text) is not None
+
+
 async def _web(topic: str, emit: Emit) -> list[WebSignal]:
-    hits = await tinyfish_client.search(SEARCH_QUERY.format(topic=topic))
+    batches = await asyncio.gather(*(tinyfish_client.search(q.format(topic=topic)) for q in SEARCH_QUERIES))
     now = datetime.now(timezone.utc)
-    signals = [WebSignal(title=h.title, url=h.url, snippet=h.snippet or None, retrieved_at=now)
-               for h in hits if h.url and h.title][:SEARCH_HITS]
-    await _say(emit, "progress", f"{len(signals)} web results" if signals else "No web results")
+    signals: list[WebSignal] = []
+    for h in (h for batch in batches for h in batch):
+        if h.url and h.title and mentions(h, topic) and all(s.url != h.url for s in signals):
+            signals.append(WebSignal(title=h.title, url=h.url, snippet=h.snippet or None, retrieved_at=now))
+    signals = signals[:SEARCH_HITS]
+    await _say(emit, "progress", f"{len(signals)} web results" if signals else f"No web results mention #{topic}")
     return signals
 
 
