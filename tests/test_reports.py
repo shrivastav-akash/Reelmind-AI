@@ -7,8 +7,9 @@ don't change when those modules land on main.
 
 import asyncio
 import json
+import secrets
 from dataclasses import replace
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -227,6 +228,54 @@ async def test_record_and_replay_a_report(env):
     done = reports.get_report(replay.id)
     assert done.status == "done" and done.replay and done.id != live.id
     assert done.result == live.result and [e.message for e in done.events] == [e.message for e in live.events]
+
+
+@pytest.mark.parametrize("kind", ["creator", "reel", "niche"])
+async def test_every_v2_report_kind_can_replay_offline(env, kind):
+    """The demo fallback must preserve the full result for every V2 report kind."""
+    _, _, _ = env
+    recorded = ReportJob.model_validate_json((MOCKS / f"report.{kind}.json").read_text())
+    recorded.id = secrets.token_hex(6)
+    recorded.created_at = datetime.now(timezone.utc)
+    recorded.status = "done"
+    path = reports.record(recorded)
+    assert path.name.startswith(f"{kind}_")
+    replay = await reports.start_replay(kind, speed=1000)
+    assert replay.replay and replay.kind == kind and replay.status == "running"
+    await asyncio.gather(*reports._replays)
+    done = reports.get_report(replay.id)
+    assert done.status == "done" and done.replay and done.result == recorded.result
+
+
+@pytest.mark.parametrize(
+    ("kind", "path", "body"),
+    [
+        ("creator", "/reports/creator", {"handle_or_url": "@mock_kitchen_a"}),
+        ("reel", "/reports/reel", {"url": "https://www.instagram.com/reel/MOCK0000001/"}),
+        ("niche", "/reports/niche", {"keywords": ["cooking", "dal"]}),
+    ],
+)
+def test_replay_mode_routes_to_the_recording_without_live_work(client, env, monkeypatch, kind, path, body):
+    """REPLAY=1 must select a completed report and bypass its live research runner."""
+    import backend.main as main
+
+    isolated, _, _ = env
+    recorded = ReportJob.model_validate_json((MOCKS / f"report.{kind}.json").read_text())
+    recorded.id = secrets.token_hex(6)
+    recorded.created_at = datetime.now(timezone.utc)
+    reports.record(recorded)
+    monkeypatch.setattr(main, "settings", replace(isolated, replay=True), raising=False)
+    start = reports.start_replay
+
+    async def fast_replay(report_kind, **kwargs):
+        return await start(report_kind, speed=1000, **kwargs)
+
+    monkeypatch.setattr(reports, "start_replay", fast_replay)
+    response = client.post(path, json=body)
+    assert response.status_code == 202
+    replay = reports.get_report(response.json()["report_id"])
+    assert replay is not None and replay.replay and replay.kind == kind
+    assert replay.input == recorded.input
 
 
 async def test_only_finished_live_reports_can_be_recorded(env):

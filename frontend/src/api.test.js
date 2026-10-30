@@ -98,6 +98,77 @@ describe('getJob()', () => {
   })
 })
 
+describe('account API', () => {
+  const user = { id: 1, email: 'creator@example.com', ig_handle: 'creator_one', profile_url: 'https://www.instagram.com/creator_one/', latest_report_id: null }
+
+  it('stores the sign-up token and sends the expected body', async () => {
+    const api = await loadApi()
+    fetch.mockReturnValue(reply(201, { token: 'secret-session-token', user }))
+    await expect(api.signUp({ email: user.email, password: 'correct-horse-battery', instagram_url: '@creator_one' }))
+      .resolves.toMatchObject({ token: 'secret-session-token', user })
+    const [url, init] = fetch.mock.calls[0]
+    expect(url).toBe('http://api.test/auth/signup')
+    expect(JSON.parse(init.body)).toEqual({ email: user.email, password: 'correct-horse-battery', instagram_url: '@creator_one' })
+    expect(localStorage.getItem('reelmind_token')).toBe('secret-session-token')
+  })
+
+  it('uses the saved bearer token for GET /me', async () => {
+    const api = await loadApi()
+    localStorage.setItem('reelmind_token', 'saved-token')
+    fetch.mockReturnValue(reply(200, user))
+    await expect(api.getMe()).resolves.toEqual(user)
+    expect(fetch.mock.calls[0][0]).toBe('http://api.test/me')
+    expect(fetch.mock.calls[0][1].headers).toEqual({ Authorization: 'Bearer saved-token' })
+  })
+
+  it('logs in with the same session shape as sign-up', async () => {
+    const api = await loadApi()
+    fetch.mockReturnValue(reply(200, { token: 'login-token', user }))
+    await expect(api.signIn({ email: user.email, password: 'correct-horse-battery' }))
+      .resolves.toMatchObject({ token: 'login-token', user })
+    expect(fetch.mock.calls[0][0]).toBe('http://api.test/auth/login')
+    expect(localStorage.getItem('reelmind_token')).toBe('login-token')
+  })
+
+  it('refreshes the current creator report with the saved bearer token', async () => {
+    const api = await loadApi()
+    localStorage.setItem('reelmind_token', 'saved-token')
+    fetch.mockReturnValue(reply(202, { report_id: 'report123456' }))
+    await expect(api.refreshMyReport()).resolves.toEqual({ report_id: 'report123456' })
+    expect(fetch.mock.calls[0][0]).toBe('http://api.test/me/refresh')
+    expect(fetch.mock.calls[0][1].headers).toEqual({ Authorization: 'Bearer saved-token' })
+  })
+
+  it('sends the assistant question, recent history, and bearer token', async () => {
+    const api = await loadApi()
+    localStorage.setItem('reelmind_token', 'saved-token')
+    const answer = { answer: 'Question hooks reached 4x.', keys: ['pat.hook_type.question'], reel_ids: ['r1'], follow_ups: [] }
+    fetch.mockReturnValue(reply(200, answer))
+    await expect(api.askAssistant('What next?', [{ role: 'user', text: 'What works?' }])).resolves.toEqual(answer)
+    const [url, init] = fetch.mock.calls[0]
+    expect(url).toBe('http://api.test/assistant')
+    expect(init.headers.Authorization).toBe('Bearer saved-token')
+    expect(JSON.parse(init.body)).toEqual({ message: 'What next?', history: [{ role: 'user', text: 'What works?' }] })
+  })
+
+  it('clears the local token after a 204 logout response', async () => {
+    const api = await loadApi()
+    localStorage.setItem('reelmind_token', 'saved-token')
+    fetch.mockReturnValue(reply(204, null))
+    await expect(api.signOut()).resolves.toBeUndefined()
+    expect(fetch.mock.calls[0][0]).toBe('http://api.test/auth/logout')
+    expect(localStorage.getItem('reelmind_token')).toBeNull()
+  })
+
+  it('clears the local token even when logout cannot reach the backend', async () => {
+    const api = await loadApi()
+    localStorage.setItem('reelmind_token', 'saved-token')
+    fetch.mockRejectedValue(new TypeError('offline'))
+    await expect(api.signOut()).rejects.toMatchObject({ status: 0 })
+    expect(localStorage.getItem('reelmind_token')).toBeNull()
+  })
+})
+
 describe('mock mode (building the UI before the API exists)', () => {
   it('never touches the network', async () => {
     const api = await loadApi({ mock: '1' })

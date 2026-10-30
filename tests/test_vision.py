@@ -1,10 +1,13 @@
 """Defines "done" for vision.py (Fri task N1). Fails with NotImplementedError until built."""
 
 
+from datetime import datetime, timezone
+
 import pytest
 
 from backend import llm_client, vision
 from backend.models import VisionResult
+from backend.report_models import CoverNotes, CreatorReport, ProfileStats, ReelStat
 from backend.video import Frame, Word
 
 
@@ -88,3 +91,64 @@ async def test_draft_without_speech_still_works(monkeypatch, done_job, frames): 
     calls = fake_llm(monkeypatch, answer)
     out = await vision.analyse_opening(done_job.video, frames, [], "cooking")
     assert out.payoff_at_s == 3.0 and "no speech" in calls[0]["prompt"].lower()
+
+
+def cover_report(count=8):
+    now = datetime.now(timezone.utc)
+    return CreatorReport(
+        profile=ProfileStats(handle="test_creator", profile_url="https://www.instagram.com/test_creator/"),
+        reels=[ReelStat(
+            id=f"r{n}", source_url=f"https://www.instagram.com/reel/{n:011d}/", retrieved_at=now,
+            access_status="accessible", ratio_vs_median=float(n),
+            cover_url=f"https://scontent.cdninstagram.com/{n}.jpg",
+        ) for n in range(1, count + 1)],
+    )
+
+
+async def test_cover_analysis_selects_top_bottom_and_explicit_reel(monkeypatch):
+    report = cover_report()
+    extra = ReelStat(id="r0", source_url="https://www.instagram.com/reel/00000000000/",
+                     retrieved_at=datetime.now(timezone.utc), access_status="accessible", cover_url="https://scontent.cdninstagram.com/0.jpg")
+
+    async def download(url):
+        return "image/jpeg", url.encode()
+
+    monkeypatch.setattr(vision, "_download_cover", download)
+    calls = []
+
+    async def generate(prompt, schema, *, images=None, temperature=0.2):
+        calls.append((prompt, schema, images))
+        return schema(covers=[vision.CoverReading(reel_id=label.removeprefix("Reel "), notes=CoverNotes(
+            text_on_cover="Recipe", face=False, setting="kitchen", style="bright")) for label, _, _ in images])
+
+    monkeypatch.setattr(llm_client, "generate_json", generate)
+    await vision.analyse_covers(report, also=[extra])
+
+    assert calls[0][1] is vision.CoverReadings
+    assert {label for label, _, _ in calls[0][2]} == {"Reel r1", "Reel r2", "Reel r3", "Reel r6", "Reel r7", "Reel r8", "Reel r0"}
+    assert extra.cover_notes.text_on_cover == "Recipe"
+    assert report.reels[0].cover_notes.text_on_cover == "Recipe"
+    assert "Only the three highest and lowest ratio covers" in report.reels[3].null_reasons["cover_notes"]
+
+
+async def test_cover_analysis_keeps_reason_when_download_fails(monkeypatch):
+    report = cover_report(1)
+
+    async def download(_url):
+        raise ValueError("Public page did not return a supported image")
+
+    monkeypatch.setattr(vision, "_download_cover", download)
+
+    async def should_not_run(*_args, **_kwargs):
+        pytest.fail("Gemini should not run without a downloaded image")
+
+    monkeypatch.setattr(llm_client, "generate_json", should_not_run)
+    await vision.analyse_covers(report)
+    assert report.reels[0].cover_notes is None
+    assert "supported image" in report.reels[0].null_reasons["cover_notes"]
+
+
+def test_cover_download_only_allows_https_instagram_cdns():
+    assert vision._cover_url_reason("http://scontent.cdninstagram.com/a.jpg")
+    assert vision._cover_url_reason("https://example.com/a.jpg")
+    assert vision._cover_url_reason("https://scontent.cdninstagram.com/a.jpg") is None

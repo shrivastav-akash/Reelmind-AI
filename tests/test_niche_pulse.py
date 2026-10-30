@@ -11,15 +11,74 @@ from datetime import date
 import pytest
 from fastapi.testclient import TestClient
 
-from backend import niche_pulse, niche_scout, reports, tinyfish_client
+from backend import creator_metrics, creator_report, llm_client, niche_pulse, niche_scout, reports, tinyfish_client
 from backend.instagram_parse import TopicRejected
-from backend.report_models import STAGES, Insight, PatternRow
+from backend.report_models import STAGES, Insight, InsightDraft, InsightSet, NichePulse, PatternRow, ReelStat
 from backend.tinyfish_client import FetchedPage, SearchHit, TinyFishAccountError
 
 from .conftest import load_mock
 
 DONE = load_mock("done")
 TODAY = date(2026, 10, 30)
+
+
+def pulse(reels, run_date=TODAY):
+    return NichePulse(keywords=["cooking"], run_date=run_date, reels=reels)
+
+
+def pulse_reel(rid, caption, *, days_ago=1, ratio=3.0, audio="Original audio"):
+    from datetime import datetime, timedelta, timezone
+    return ReelStat(id=rid, source_url=f"https://www.instagram.com/reel/{rid}/",
+                    retrieved_at=datetime(2026, 10, 30, tzinfo=timezone.utc), access_status="accessible",
+                    handle="cook", topic="cooking", posted_date=TODAY - timedelta(days=days_ago),
+                    ratio_vs_median=ratio, views=3000, caption=caption,
+                    hook_line=caption.splitlines()[0], audio_label=audio,
+                    original_audio=audio.startswith("Original audio"))
+
+
+def test_pulse_analysis_fills_patterns_and_new_signals():
+    old = pulse([pulse_reel("r1", "Dinner tonight\n#rice", audio="Artist · song")], date(2026, 10, 29))
+    creator_metrics.analyse_pulse(old, None)
+    current = pulse([pulse_reel("r2", "Why dal works?\n#dal #rice"), pulse_reel("r3", "Why more dal?\n#dal")])
+    creator_metrics.analyse_pulse(current, old)
+    assert current.previous_run_date == old.run_date
+    assert current.since_last_run == ["New hashtag in outliers: #dal", "New audio in outliers: Original audio", "New hook type in outliers: question"]
+    assert current.reels[0].hook_type == "question" and current.reels[0].in_window
+    assert any(p.key == "pat.hashtag.#dal" and p.reel_ids == ["r2", "r3"] for p in current.patterns)
+
+
+def test_first_pulse_has_empty_diff():
+    current = pulse([pulse_reel("r1", "Dinner\n#rice")])
+    creator_metrics.analyse_pulse(current, None)
+    assert current.previous_run_date is None and current.since_last_run == []
+
+
+async def test_pulse_insights_validate_then_use_template(monkeypatch):
+    current = pulse([pulse_reel("r1", "Why dal?\n#dal"), pulse_reel("r2", "Why rice?\n#dal")])
+    creator_metrics.analyse_pulse(current, None)
+    async def unavailable(*args, **kwargs):
+        raise RuntimeError("offline")
+    monkeypatch.setattr(llm_client, "generate_json", unavailable)
+    await creator_report.write_pulse_insights(current)
+    assert current.insights_source == "template"
+    assert all(set(i.keys) <= set(current.citable()) and set(i.reel_ids) <= current.reel_ids() for i in current.insights)
+
+
+async def test_pulse_insight_prompt_and_llm_answer(monkeypatch):
+    current = pulse([pulse_reel("r1", "Why dal?\n#dal"), pulse_reel("r2", "Why rice?\n#dal")])
+    creator_metrics.analyse_pulse(current, None)
+    pattern = next(p for p in current.patterns if p.key == "pat.hashtag.#dal")
+    draft = InsightDraft(kind="working", claim=f"This pattern reached {pattern.median_ratio:g}x across 2 Reels.",
+                         keys=[pattern.key], reel_ids=["r1", "r2"])
+    prompts = []
+    async def generate(prompt, schema, **kwargs):
+        prompts.append(prompt)
+        assert schema is InsightSet
+        return InsightSet(insights=[draft])
+    monkeypatch.setattr(llm_client, "generate_json", generate)
+    await creator_report.write_pulse_insights(current)
+    assert current.insights_source == "llm" and current.insights[0].claim == draft.claim
+    assert "today's snapshot, not a prediction" in prompts[0] and "pat.hashtag.#dal" in prompts[0]
 
 
 # ---------------------------------------------------------------- what users type
@@ -216,7 +275,7 @@ async def run(keywords=("cooking", "dal"), today=TODAY):
 async def test_niche_report_runs_every_stage_and_saves_the_day(env):
     isolated, lane, _ = env
     job = await run()
-    assert job.status == "done" and {n: s.status for n, s in job.stages.items()} == dict.fromkeys(STAGES["niche"], "done")
+    assert job.status == "done" and {n: s.status for n, s in job.stages.items()} == dict.fromkeys(STAGES["niche"], "done"), {n: s.reason for n, s in job.stages.items()}
     assert job.result.kind == "niche" and job.result.insights_source == "llm" and job.result.patterns
     saved = isolated.data_dir / "pulse" / "cooking+dal" / "2026-10-30.json"
     assert saved.exists() and "pat" not in saved.name

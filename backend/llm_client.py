@@ -35,11 +35,13 @@ def _log(payload: dict) -> None:
     write_log(settings, "gemini", payload)
 
 
-def _contents(prompt: str, images: list[tuple[str, bytes]]) -> list:
-    """Prompt first, then each image preceded by its text label (e.g. "t=1.5s")."""
+def _contents(prompt: str, images: list[tuple[str, bytes] | tuple[str, bytes, str]]) -> list:
+    """Prompt first, then labelled images; two-item tuples keep the JPEG default for old callers."""
     contents: list = [prompt]
-    for label, jpg in images:
-        contents += [label, types.Part.from_bytes(data=jpg, mime_type="image/jpeg")]
+    for image in images:
+        label, data = image[:2]
+        mime_type = image[2] if len(image) == 3 else "image/jpeg"
+        contents += [label, types.Part.from_bytes(data=data, mime_type=mime_type)]
     return contents
 
 
@@ -47,7 +49,7 @@ async def generate_json(
     prompt: str,
     schema: type[T],
     *,
-    images: list[tuple[str, bytes]] | None = None,
+    images: list[tuple[str, bytes] | tuple[str, bytes, str]] | None = None,
     temperature: float = 0.2,
 ) -> T:
     if not settings.gemini_api_key:
@@ -63,7 +65,7 @@ async def generate_json(
     for model in dict.fromkeys([settings.llm_model, settings.llm_fallback_model]):  # dedupe, keep order
         started = time.monotonic()
         log = {"model": model, "schema": schema.__name__, "prompt": prompt,
-               "images": [{"label": lbl, "bytes": len(b)} for lbl, b in images]}
+               "images": [{"label": image[0], "bytes": len(image[1])} for image in images]}
         try:
             # Our own ceiling per attempt: a call that never answers must not freeze the job.
             async with asyncio.timeout(settings.llm_timeout_s):

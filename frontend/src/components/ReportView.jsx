@@ -190,6 +190,36 @@ function ReelRows({ reels, label, showCreator = false }) {
   )
 }
 
+function CoverStrip({ reels }) {
+  const covers = reels.filter((r) => r.cover_url || r.cover_notes)
+  if (!covers.length) return null
+  return (
+    <section className="panel wide" aria-label="Cover visuals">
+      <h2>Cover visuals <span className="muted small">Estimated from public cover images</span></h2>
+      <ul className="cover-strip">
+        {covers.map((r) => (
+          <li key={r.id}>
+            {r.cover_url ? (
+              <a href={r.source_url} target="_blank" rel="noopener noreferrer" aria-label={`Open cover for ${r.id} on Instagram`}>
+                <img src={r.cover_url} alt={`Cover image for ${r.id}`} loading="lazy" />
+              </a>
+            ) : <div className="cover-placeholder">Cover unavailable</div>}
+            <strong>{r.id}</strong>
+            {r.cover_notes ? (
+              <p className="small">
+                {r.cover_notes.text_on_cover && <span className="cover-quote">“{r.cover_notes.text_on_cover}”</span>}
+                <span>{`${r.cover_notes.face === true ? 'Face visible' : r.cover_notes.face === false ? 'No face seen' : 'Face unclear'} · ${r.cover_notes.setting} · ${r.cover_notes.style}`}</span>
+              </p>
+            ) : (
+              <p className="muted small">{r.null_reasons?.cover_notes || r.null_reasons?.cover_url || 'Visual notes unavailable'}</p>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 function Patterns({ patterns }) {
   if (!patterns?.length) return null
   const groups = Object.keys(DIMENSIONS)
@@ -315,6 +345,7 @@ export default function ReportView({ job }) {
           {r?.kind === 'creator' && (
             <>
               <ReelRows reels={r.reels} label="Recent Reels" />
+              <CoverStrip reels={r.reels} />
               <Patterns patterns={r.patterns} />
             </>
           )}
@@ -322,6 +353,7 @@ export default function ReportView({ job }) {
             <>
               <Profile creator={r.creator} />
               <ReelRows reels={r.creator.reels} label={`@${r.creator.profile.handle}'s recent Reels`} />
+              <CoverStrip reels={[r.reel, ...r.creator.reels]} />
               <Patterns patterns={r.creator.patterns} />
             </>
           )}

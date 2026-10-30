@@ -33,13 +33,15 @@ from pathlib import Path
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend import auth, creator_profiler, jobs, niche_pulse, reel_report, reports, video
+from backend import assistant, auth, creator_profiler, jobs, niche_pulse, reel_report, reports, video
 from backend.config import settings
 from backend.creator_profiler import HandleRejected
 from backend.instagram_parse import TopicRejected, normalise_topic
 from backend.reel_report import ReelUrlRejected
 from backend.report_models import (
     AuthSession,
+    AssistantReply,
+    AssistantRequest,
     CreatorReportRequest,
     LoginRequest,
     NicheReportRequest,
@@ -153,7 +155,8 @@ async def start_reel_report(body: ReelReportRequest, background: BackgroundTasks
 
 
 @app.post("/reports/niche", status_code=202)
-async def start_niche_report(body: NicheReportRequest, background: BackgroundTasks) -> dict:
+async def start_niche_report(body: NicheReportRequest, background: BackgroundTasks,
+                             user: UserPublic | None = Depends(auth.optional_user)) -> dict:
     try:
         keywords = niche_pulse.parse_keywords(body.keywords)
     except (TopicRejected, niche_pulse.KeywordsRejected) as exc:
@@ -164,7 +167,7 @@ async def start_niche_report(body: NicheReportRequest, background: BackgroundTas
         except jobs.ReplayUnavailable as exc:
             raise HTTPException(503, str(exc)) from exc
         return {"report_id": replay.id}
-    job = reports.create_report("niche", {"keywords": keywords})
+    job = reports.create_report("niche", {"keywords": keywords}, owner_id=user.id if user else None)
     background.add_task(reports.run_niche_report, job.id)
     return {"report_id": job.id}
 
@@ -236,3 +239,11 @@ async def refresh_my_report(background: BackgroundTasks, user: UserPublic = Depe
     if report_id is None:
         raise HTTPException(503, f"No recorded report of @{user.ig_handle} to replay. Record one, or set REPLAY=0.")
     return {"report_id": report_id}
+
+
+@app.post("/assistant")
+async def ask_assistant(body: AssistantRequest, user: UserPublic = Depends(auth.require_user)) -> AssistantReply:
+    try:
+        return await assistant.answer(user, body)
+    except assistant.AssistantError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc

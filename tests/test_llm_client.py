@@ -14,6 +14,13 @@ from backend.models import VisionResult
 ANSWER = '{"text_overlay_first_3s": null, "opening_description": "x", "payoff_at_s": null, "payoff_reason": "y"}'
 
 
+def test_contents_preserves_existing_jpeg_default_and_supports_other_image_types():
+    contents = llm_client._contents("prompt", [("frame", b"jpeg"), ("cover", b"png", "image/png")])
+    assert contents[0] == "prompt"
+    assert contents[2].inline_data.mime_type == "image/jpeg"
+    assert contents[4].inline_data.mime_type == "image/png"
+
+
 def fake_gemini(monkeypatch, *behaviours):
     """Each call takes the next behaviour: a JSON string to answer, an exception, or "hang"."""
     calls = []

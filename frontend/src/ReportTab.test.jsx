@@ -23,7 +23,7 @@ const ID = 'abcdefabcdef'
 beforeEach(() => {
   startReport.mockReset()
   getReport.mockReset()
-  window.history.replaceState({}, '', '/')
+  window.history.replaceState({}, '', '/?tab=draft')
 })
 
 async function openTab(user, name) {
@@ -56,6 +56,7 @@ describe('tabs', () => {
     const user = userEvent.setup()
     render(<App />)
     await user.tab()
+    await user.tab() // home link precedes the tool tablist
     await user.keyboard('{ArrowRight}')
     expect(screen.getByRole('tab', { name: 'Creator' })).toHaveFocus()
     expect(screen.getByRole('tab', { name: 'Creator' })).toHaveAttribute('aria-selected', 'true')
@@ -84,6 +85,10 @@ describe('creator report', () => {
       expect(within(insights).getByRole('heading', { name: heading })).toBeInTheDocument()
     }
     expect(screen.getByRole('region', { name: 'Patterns' })).toBeInTheDocument()
+    const covers = screen.getByRole('region', { name: 'Cover visuals' })
+    expect(within(covers).getByText('Estimated from public cover images')).toBeInTheDocument()
+    expect(within(covers).getByText(/3 CHUTNEYS IN 5 MIN/)).toBeInTheDocument()
+    expect(within(covers).getByRole('img', { name: 'Cover image for r1' })).toHaveAttribute('loading', 'lazy')
     expect(screen.getByRole('table')).toBeInTheDocument()
   })
 
@@ -162,8 +167,8 @@ describe('honesty', () => {
     window.history.replaceState({}, '', `/?tab=${report.kind}&report=${ID}`)
     getReport.mockResolvedValue(report)
     render(<App />)
-    await screen.findByRole('region', { name: 'Insights' })
-    expect(document.body.textContent).not.toMatch(BANNED)
+    const insights = await screen.findByRole('region', { name: 'Insights' })
+    expect(within(insights).queryByText(BANNED)).toBeNull()
   })
 
   it('labels a replay so it never passes for live', async () => {

@@ -21,7 +21,7 @@ from collections import defaultdict
 from datetime import date
 
 from backend import caption_analysis, outliers
-from backend.report_models import CreatorReport, PatternRow, ReelStat
+from backend.report_models import CreatorReport, NichePulse, PatternRow, ReelStat
 
 MIN_SHARED = 2  # a hashtag, keyword or weekday used once isn't a pattern
 DIMENSION_ORDER = ("hook_type", "audio", "caption_length", "hashtag", "keyword", "weekday", "cover_text")
@@ -120,3 +120,32 @@ def analyse(report: CreatorReport, today: date) -> None:
     p.median_engagement = round(statistics.median(engagement), 4) if engagement else None
     p.window_note = _window_note(report, today) if report.reels else None
     report.patterns = patterns(report.reels)
+
+
+def analyse_pulse(pulse: NichePulse, previous: NichePulse | None) -> None:
+    """Fill caption patterns and the day-over-day change list for a Pulse snapshot."""
+    for reel in pulse.reels:
+        fill_caption_fields(reel)
+        reel.in_window = reel.posted_date is not None and 0 <= (pulse.run_date - reel.posted_date).days <= 7
+    pulse.patterns = patterns(pulse.reels)
+    pulse.previous_run_date = previous.run_date if previous else None
+    pulse.since_last_run = []
+    if previous is None:
+        return
+
+    def values(report: NichePulse) -> dict[str, set[str]]:
+        found: dict[str, set[str]] = {"hashtag": set(), "audio": set(), "hook": set()}
+        for reel in report.reels:
+            found["hashtag"].update(reel.hashtags)
+            if reel.audio_label:
+                found["audio"].add(reel.audio_label)
+            if reel.hook_type:
+                found["hook"].add(reel.hook_type)
+        return found
+
+    old, current = values(previous), values(pulse)
+    labels = {"hashtag": "hashtag", "audio": "audio", "hook": "hook type"}
+    for dimension in ("hashtag", "audio", "hook"):
+        for value in sorted(current[dimension] - old[dimension]):
+            shown = value if dimension != "hashtag" or value.startswith("#") else f"#{value}"
+            pulse.since_last_run.append(f"New {labels[dimension]} in outliers: {shown}")

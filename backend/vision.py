@@ -8,8 +8,15 @@ docs/prompts.md §1. "Done" is defined by tests/test_vision.py.
 
 from __future__ import annotations
 
+import asyncio
+from urllib.parse import urlsplit
+
+import httpx
+from pydantic import BaseModel
+
 from backend import llm_client
 from backend.models import VideoMeasurements, VisionResult
+from backend.report_models import CoverNotes, CreatorReport, ReelStat
 from backend.video import Frame, Word
 
 # A payoff time must sit on (or within this many seconds of) a frame we actually sent.
@@ -30,6 +37,134 @@ Rules: only describe what is in the frames and transcript. Don't guess about mom
 
 Topic: {topic}
 Transcript (word: start time): {word_list}"""
+
+COVER_TIMEOUT_S = 5.0
+COVER_MAX_BYTES = 4 * 1024 * 1024
+COVER_TYPES = {"image/jpeg", "image/png", "image/webp"}
+COVER_HOSTS = ("cdninstagram.com", "fbcdn.net")
+
+
+class CoverReading(BaseModel):
+    reel_id: str
+    notes: CoverNotes
+
+
+class CoverReadings(BaseModel):
+    covers: list[CoverReading]
+
+
+COVER_PROMPT = """Describe only visible details in each public Instagram Reel cover image.
+For every image, return its exact Reel id with:
+- text_on_cover: visible words copied exactly, or null if there is no readable text
+- face: true only when a person's face is visible, false when no face is visible, null if unclear
+- setting: a short literal description of the visible setting
+- style: a short description of the visible framing, colour, or presentation
+Do not infer performance, audience, recipe quality, or anything outside the image. These are visual estimates.
+Return one item per image, using the ids shown in the labels."""
+
+
+def _cover_url_reason(url: str) -> str | None:
+    try:
+        parsed = urlsplit(url)
+        host = (parsed.hostname or "").lower()
+        valid_host = any(host == suffix or host.endswith(f".{suffix}") for suffix in COVER_HOSTS)
+        if parsed.scheme != "https" or not valid_host or parsed.username or parsed.password or parsed.port not in (None, 443):
+            return "Cover URL is not a public Instagram image URL"
+    except ValueError:
+        return "Cover URL is not a valid public Instagram image URL"
+    return None
+
+
+async def _download_cover(url: str) -> tuple[str, bytes]:
+    """Read bounded image bytes from Instagram's CDN only; never follow redirects off-domain."""
+    reason = _cover_url_reason(url)
+    if reason:
+        raise ValueError(reason)
+    async with httpx.AsyncClient(timeout=COVER_TIMEOUT_S, follow_redirects=False) as client:
+        async with client.stream("GET", url) as response:
+            if response.status_code < 200 or response.status_code >= 300:
+                raise ValueError(f"Cover image request returned HTTP {response.status_code}")
+            content_type = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+            if content_type not in COVER_TYPES:
+                raise ValueError("Public page did not return a supported image")
+            length = response.headers.get("content-length")
+            if length and int(length) > COVER_MAX_BYTES:
+                raise ValueError("Cover image is over 4 MB")
+            data = bytearray()
+            async for chunk in response.aiter_bytes():
+                data.extend(chunk)
+                if len(data) > COVER_MAX_BYTES:
+                    raise ValueError("Cover image is over 4 MB")
+    return content_type, bytes(data)
+
+
+def _covers_to_analyse(report: CreatorReport, also: list[ReelStat]) -> list[ReelStat]:
+    """Choose top and bottom performers by measured ratio; explicit Reel-report covers always join."""
+    ranked = [r for r in report.reels if r.access_status == "accessible" and r.cover_url and r.ratio_vs_median is not None]
+    ranked.sort(key=lambda r: (r.ratio_vs_median, r.id))
+    chosen_ids = {r.id for r in ranked[:3] + ranked[-3:]}
+    chosen_ids.update(r.id for r in also if r.access_status == "accessible" and r.cover_url)
+    for reel in report.reels:
+        if reel.id in chosen_ids:
+            reel.null_reasons.pop("cover_notes", None)
+        elif reel.cover_url and reel.access_status == "accessible":
+            reel.cover_notes = None
+            reel.null_reasons["cover_notes"] = (
+                "A creator median is needed to rank covers" if reel.ratio_vs_median is None
+                else "Only the three highest and lowest ratio covers are analysed"
+            )
+    return [r for r in [*report.reels, *also] if r.id in chosen_ids]
+
+
+async def analyse_covers(report: CreatorReport, also: list[ReelStat] = ()) -> None:
+    """Fill estimated cover notes on top/bottom creator Reels and explicitly requested Reels.
+
+    Direct downloads are limited to the public Instagram image CDNs and bounded by size/time;
+    cover failures remain local to the Reel so the rest of the report can finish.
+    """
+    selected = _covers_to_analyse(report, list(also))
+    if not selected:
+        return
+
+    semaphore = asyncio.Semaphore(3)
+
+    async def load(reel: ReelStat) -> tuple[ReelStat, tuple[str, bytes] | None]:
+        async with semaphore:
+            try:
+                mime, image = await _download_cover(reel.cover_url or "")
+                return reel, (mime, image)
+            except (httpx.HTTPError, ValueError) as exc:
+                reel.cover_notes = None
+                reel.null_reasons["cover_notes"] = f"Cover couldn't be analysed: {exc}"
+                return reel, None
+
+    loaded = await asyncio.gather(*(load(reel) for reel in selected))
+    images = [(f"Reel {reel.id}", data[1], data[0]) for reel, data in loaded if data]
+    if not images:
+        return
+    ids = {label.removeprefix("Reel ") for label, _, _ in images}
+    prompt = COVER_PROMPT
+    try:
+        answer = await llm_client.generate_json(prompt, CoverReadings, images=images)
+    except Exception as exc:  # Cover notes are optional; preserve the rest of the report on Gemini failures.
+        for reel, data in loaded:
+            if data:
+                reel.cover_notes = None
+                reel.null_reasons["cover_notes"] = f"Cover analysis failed: {exc}"
+        return
+
+    by_id = {r.id: r for r, data in loaded if data}
+    seen: set[str] = set()
+    for item in answer.covers:
+        reel = by_id.get(item.reel_id)
+        if reel is None or item.reel_id in seen:
+            continue
+        reel.cover_notes = item.notes
+        reel.null_reasons.pop("cover_notes", None)
+        seen.add(item.reel_id)
+    for reel_id in ids - seen:
+        by_id[reel_id].cover_notes = None
+        by_id[reel_id].null_reasons["cover_notes"] = "Gemini did not return notes for this cover"
 
 
 def build_prompt(words: list[Word], topic: str) -> str:

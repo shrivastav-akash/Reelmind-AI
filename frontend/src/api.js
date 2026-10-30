@@ -39,9 +39,63 @@ async function request(path, init) {
     const fallback = res.status === 404 ? NOT_FOUND : `Something went wrong (${res.status}). Try again.`
     throw apiError(typeof data?.detail === 'string' ? data.detail : fallback, res.status)
   }
+  if (res.status === 204) return null
   // A 2xx that isn't JSON didn't come from our API (e.g. a dev server answering with index.html).
   if (data === null) throw apiError(`Something went wrong (${res.status}). Try again.`, res.status)
   return data
+}
+
+const TOKEN_KEY = 'reelmind_token'
+
+function authHeaders() {
+  const token = localStorage.getItem(TOKEN_KEY)
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+function saveSession(session) {
+  if (!session?.token || !session?.user) throw apiError('The server returned an incomplete sign-in response.', 500)
+  localStorage.setItem(TOKEN_KEY, session.token)
+  return session
+}
+
+export function hasSession() {
+  return Boolean(localStorage.getItem(TOKEN_KEY))
+}
+
+export function clearSession() {
+  localStorage.removeItem(TOKEN_KEY)
+}
+
+export async function signUp(body) {
+  if (USE_MOCK) return saveSession({ token: 'mock-token', user: { id: 1, email: body.email, ig_handle: body.instagram_url.replace(/^@/, ''), profile_url: `https://www.instagram.com/${body.instagram_url.replace(/^@/, '')}/`, latest_report_id: 'mockcreator1' } })
+  return saveSession(await request('/auth/signup', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  }))
+}
+
+export async function signIn(body) {
+  if (USE_MOCK) return saveSession({ token: 'mock-token', user: { id: 1, email: body.email, ig_handle: 'mock_kitchen_a', profile_url: 'https://www.instagram.com/mock_kitchen_a/', latest_report_id: 'mockcreator1' } })
+  return saveSession(await request('/auth/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  }))
+}
+
+export async function getMe() {
+  if (USE_MOCK) return { id: 1, email: 'mock.user@example.com', ig_handle: 'mock_kitchen_a', profile_url: 'https://www.instagram.com/mock_kitchen_a/', latest_report_id: 'mockcreator1' }
+  return request('/me', { headers: authHeaders() })
+}
+
+export async function signOut() {
+  try {
+    if (!USE_MOCK && hasSession()) await request('/auth/logout', { method: 'POST', headers: authHeaders() })
+  } finally {
+    clearSession()
+  }
+}
+
+export async function refreshMyReport() {
+  if (USE_MOCK) return { report_id: 'mockcreator1' }
+  return request('/me/refresh', { method: 'POST', headers: authHeaders() })
 }
 
 // POST /analyze. Resolves to { job_id }; a 400 rejects with the server's reason
@@ -81,8 +135,19 @@ export async function startReport(kind, body) {
   if (USE_MOCK) return { report_id: `mock-${kind}` }
   return request(`/reports/${kind}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(body),
+  })
+}
+
+export async function askAssistant(message, history) {
+  if (USE_MOCK) return {
+    answer: 'Question hooks reached 4.1x your usual views across two recent Reels.',
+    keys: ['pat.hook_type.question'], reel_ids: ['r1', 'r3'], follow_ups: ['Which question hooks should I try?'],
+  }
+  return request('/assistant', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ message, history }),
   })
 }
 

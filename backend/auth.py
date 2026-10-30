@@ -182,3 +182,14 @@ def require_user(authorization: str | None = Header(None)) -> UserPublic:
     if user is None:
         raise HTTPException(401, "Log in to continue.", headers={"WWW-Authenticate": "Bearer"})
     return user
+
+
+def optional_user(authorization: str | None = Header(None)) -> UserPublic | None:
+    """Attach ownership to public routes when a valid session is supplied."""
+    token = bearer_token(authorization)
+    if token is None:
+        return None
+    user = user_for_token(token)
+    if user is None:
+        raise HTTPException(401, "Your session expired. Log in again.", headers={"WWW-Authenticate": "Bearer"})
+    return user
