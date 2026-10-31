@@ -9,15 +9,20 @@ export default function UploadForm({ topic, onFile, onTopic, onSubmit, buttonLab
         onSubmit()
       }}
     >
-      <div className="field">
+      <div className="field file-field">
         <label htmlFor="draft">Draft video</label>
-        <input
-          id="draft"
-          type="file"
-          accept=".mp4,.mov,video/mp4,video/quicktime"
-          onChange={(e) => onFile(e.target.files?.[0] ?? null)}
-        />
-        <span className="hint">.mp4 or .mov, up to 60 s</span>
+        <div className="file-input-row">
+          <span className="file-glyph" aria-hidden="true">↥</span>
+          <div className="file-input-copy">
+            <input
+              id="draft"
+              type="file"
+              accept=".mp4,.mov,video/mp4,video/quicktime"
+              onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+            />
+            <span className="hint">MP4 or MOV · up to 60 seconds</span>
+          </div>
+        </div>
       </div>
       <div className="field">
         <label htmlFor="topic">Topic</label>

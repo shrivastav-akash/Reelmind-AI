@@ -333,7 +333,7 @@ export default function ReportView({ job }) {
   return (
     <>
       {job.replay && <ReplayBanner recordedAt={job.replay_recorded_at} />}
-      <main className="report">
+      <div className="report">
         <div className="report-side">
           <Progress job={job} />
           {r?.kind === 'creator' && <Profile creator={r} />}
@@ -365,7 +365,7 @@ export default function ReportView({ job }) {
             </>
           )}
         </div>
-      </main>
+      </div>
     </>
   )
 }

@@ -31,6 +31,12 @@ const FORMS = {
   },
 }
 
+const TITLES = {
+  creator: { title: 'Understand a creator’s recent patterns.', label: 'Creator intelligence' },
+  reel: { title: 'Put one Reel in context.', label: 'Single Reel comparison' },
+  niche: { title: 'See what is moving in your niche.', label: 'Public examples, today' },
+}
+
 function setReportInUrl(kind, reportId) {
   const url = new URL(window.location.href)
   url.search = reportId ? `?tab=${kind}&report=${reportId}` : `?tab=${kind}`
@@ -82,9 +88,14 @@ export default function ReportTab({ kind }) {
   else if (report?.status === 'failed') alert = { message: report.error || 'This report stopped before it finished.', retry: null }
 
   return (
-    <div className="page">
-      <header className="top">
-        <form className="upload" onSubmit={finished ? (e) => { e.preventDefault(); reset() } : start}>
+    <main className="page report-page">
+      <header className="report-head">
+        <div className="page-heading report-heading">
+          <p className="eyebrow">{TITLES[kind].label}</p>
+          <h1>{TITLES[kind].title}</h1>
+          <p>{form.intro}</p>
+        </div>
+        <form className="upload report-form" onSubmit={finished ? (e) => { e.preventDefault(); reset() } : start}>
           <div className="field grow">
             <label htmlFor={`${kind}-input`}>{form.label}</label>
             <input
@@ -114,14 +125,9 @@ export default function ReportTab({ kind }) {
         </div>
       )}
 
-      {!reportId && (
-        <p className="intro">
-          {form.intro}
-          {USE_MOCK && ' (Mock mode: shows a pretend report.)'}
-        </p>
-      )}
+      {!reportId && USE_MOCK && <p className="intro">Mock mode: shows a pretend report.</p>}
       {reportId && !report && !alert && <p className="intro">Starting…</p>}
       {report && <ReportView job={report} />}
-    </div>
+    </main>
   )
 }

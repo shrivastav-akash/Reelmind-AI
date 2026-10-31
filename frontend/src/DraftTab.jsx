@@ -81,12 +81,17 @@ export default function DraftTab() {
   const showCard = rec?.suggestions?.length > 0
 
   return (
-    <div className="page">
+    <main className="page draft-page">
       {job?.replay && <ReplayBanner recordedAt={job.replay_recorded_at} />}
-      <header className="top">
-        <h1>
-          ReelMind <span className="accent">AI</span>
-        </h1>
+      <header className="draft-heading">
+        <div>
+          <p className="eyebrow">Draft lab · Private upload</p>
+          <h1>Find the moment that earns the next second.</h1>
+          <p>Measure your opening, then compare it with public Reels in your niche. Your uploaded draft is analysed for this report; it is not published.</p>
+        </div>
+        <span className="privacy-mark">Your draft stays yours</span>
+      </header>
+      <section className="draft-intake" aria-label="Start a draft analysis">
         <UploadForm
           key={formKey}
           topic={topic}
@@ -96,7 +101,10 @@ export default function DraftTab() {
           buttonLabel={finished ? 'Analyse another' : 'Analyse'}
           disabled={finished ? false : !file || !topic.trim() || uploading || running}
         />
-      </header>
+      </section>
+      {!jobId && <div className="draft-process" aria-label="Analysis steps">
+        <span>Measure your video</span><b aria-hidden="true">→</b><span>Find public examples</span><b aria-hidden="true">→</b><span>Build one experiment</span>
+      </div>}
 
       {alert && (
         <div className="alert" role="alert">
@@ -109,14 +117,7 @@ export default function DraftTab() {
         </div>
       )}
 
-      {!jobId && (
-        <p className="intro">
-          Upload an unposted Reel draft and its topic. ReelMind measures your opening, then TinyFish reads public
-          Reels in your niche that beat their own creator's usual views, and you get one experiment to try, with its
-          receipts.
-          {USE_MOCK && ' (Mock mode: any file shows a pretend job.)'}
-        </p>
-      )}
+      {!jobId && USE_MOCK && <p className="intro">Mock mode: any file shows a pretend job.</p>}
       {jobId && !job && !alert && <p className="intro">Starting the analysis…</p>}
 
       {job && (
@@ -141,6 +142,6 @@ export default function DraftTab() {
           )}
         </main>
       )}
-    </div>
+    </main>
   )
 }
